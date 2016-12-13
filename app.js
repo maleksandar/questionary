@@ -5,9 +5,6 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
-var index = require('./api/index');
-var users = require('./api/user');
-
 var app = express();
 
 // uncomment after placing your favicon in /public
@@ -25,7 +22,7 @@ app.get('/', function (req, res) {
   res.sendFile(path.join(__dirname, 'aurelia', 'index.html'));
 });
 
-app.use('/api/users', users);
+app.use('/api/users', require('./api/user'));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
