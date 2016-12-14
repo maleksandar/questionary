@@ -11374,155 +11374,6 @@ define('aurelia-binding',['exports', 'aurelia-logging', 'aurelia-pal', 'aurelia-
     return deco(targetOrConfig, key, descriptor);
   }
 });
-define('aurelia-bootstrapper',['exports', 'aurelia-pal', 'aurelia-pal-browser', 'aurelia-polyfills'], function (exports, _aureliaPal, _aureliaPalBrowser) {
-  'use strict';
-
-  Object.defineProperty(exports, "__esModule", {
-    value: true
-  });
-  exports.bootstrap = bootstrap;
-
-
-  var bootstrapQueue = [];
-  var sharedLoader = null;
-  var Aurelia = null;
-
-  function onBootstrap(callback) {
-    return new Promise(function (resolve, reject) {
-      if (sharedLoader) {
-        resolve(callback(sharedLoader));
-      } else {
-        bootstrapQueue.push(function () {
-          try {
-            resolve(callback(sharedLoader));
-          } catch (e) {
-            reject(e);
-          }
-        });
-      }
-    });
-  }
-
-  function ready(global) {
-    return new Promise(function (resolve, reject) {
-      if (global.document.readyState === 'complete') {
-        resolve(global.document);
-      } else {
-        global.document.addEventListener('DOMContentLoaded', completed);
-        global.addEventListener('load', completed);
-      }
-
-      function completed() {
-        global.document.removeEventListener('DOMContentLoaded', completed);
-        global.removeEventListener('load', completed);
-        resolve(global.document);
-      }
-    });
-  }
-
-  function createLoader() {
-    if (_aureliaPal.PLATFORM.Loader) {
-      return Promise.resolve(new _aureliaPal.PLATFORM.Loader());
-    }
-
-    if (window.System && typeof window.System.import === 'function') {
-      return System.normalize('aurelia-bootstrapper').then(function (bootstrapperName) {
-        return System.normalize('aurelia-loader-default', bootstrapperName);
-      }).then(function (loaderName) {
-        return System.import(loaderName).then(function (m) {
-          return new m.DefaultLoader();
-        });
-      });
-    }
-
-    if (typeof window.require === 'function') {
-      return new Promise(function (resolve, reject) {
-        return require(['aurelia-loader-default'], function (m) {
-          return resolve(new m.DefaultLoader());
-        }, reject);
-      });
-    }
-
-    return Promise.reject('No PLATFORM.Loader is defined and there is neither a System API (ES6) or a Require API (AMD) globally available to load your app.');
-  }
-
-  function preparePlatform(loader) {
-    return loader.normalize('aurelia-bootstrapper').then(function (bootstrapperName) {
-      return loader.normalize('aurelia-framework', bootstrapperName).then(function (frameworkName) {
-        loader.map('aurelia-framework', frameworkName);
-
-        return Promise.all([loader.normalize('aurelia-dependency-injection', frameworkName).then(function (diName) {
-          return loader.map('aurelia-dependency-injection', diName);
-        }), loader.normalize('aurelia-router', bootstrapperName).then(function (routerName) {
-          return loader.map('aurelia-router', routerName);
-        }), loader.normalize('aurelia-logging-console', bootstrapperName).then(function (loggingConsoleName) {
-          return loader.map('aurelia-logging-console', loggingConsoleName);
-        })]).then(function () {
-          return loader.loadModule(frameworkName).then(function (m) {
-            return Aurelia = m.Aurelia;
-          });
-        });
-      });
-    });
-  }
-
-  function handleApp(loader, appHost) {
-    var moduleId = appHost.getAttribute('aurelia-app') || appHost.getAttribute('data-aurelia-app');
-    return config(loader, appHost, moduleId);
-  }
-
-  function config(loader, appHost, configModuleId) {
-    var aurelia = new Aurelia(loader);
-    aurelia.host = appHost;
-    aurelia.configModuleId = configModuleId || null;
-
-    if (configModuleId) {
-      return loader.loadModule(configModuleId).then(function (customConfig) {
-        if (!customConfig.configure) {
-          throw new Error("Cannot initialize module '" + configModuleId + "' without a configure function.");
-        }
-
-        customConfig.configure(aurelia);
-      });
-    }
-
-    aurelia.use.standardConfiguration().developmentLogging();
-
-    return aurelia.start().then(function () {
-      return aurelia.setRoot();
-    });
-  }
-
-  function run() {
-    return ready(window).then(function (doc) {
-      (0, _aureliaPalBrowser.initialize)();
-
-      var appHost = doc.querySelectorAll('[aurelia-app],[data-aurelia-app]');
-      return createLoader().then(function (loader) {
-        return preparePlatform(loader).then(function () {
-          for (var i = 0, ii = appHost.length; i < ii; ++i) {
-            handleApp(loader, appHost[i]).catch(console.error.bind(console));
-          }
-
-          sharedLoader = loader;
-          for (var _i = 0, _ii = bootstrapQueue.length; _i < _ii; ++_i) {
-            bootstrapQueue[_i]();
-          }
-          bootstrapQueue = null;
-        });
-      });
-    });
-  }
-
-  function bootstrap(configure) {
-    return onBootstrap(function (loader) {
-      var aurelia = new Aurelia(loader);
-      return configure(aurelia);
-    });
-  }
-
-  run();
-});
 define('aurelia-dependency-injection',['exports', 'aurelia-metadata', 'aurelia-pal'], function (exports, _aureliaMetadata, _aureliaPal) {
   'use strict';
 
@@ -12268,169 +12119,154 @@ define('aurelia-dependency-injection',['exports', 'aurelia-metadata', 'aurelia-p
     };
   }
 });
-define('aurelia-event-aggregator',['exports', 'aurelia-logging'], function (exports, _aureliaLogging) {
+define('aurelia-bootstrapper',['exports', 'aurelia-pal', 'aurelia-pal-browser', 'aurelia-polyfills'], function (exports, _aureliaPal, _aureliaPalBrowser) {
   'use strict';
 
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.EventAggregator = undefined;
-  exports.includeEventsIn = includeEventsIn;
-  exports.configure = configure;
+  exports.bootstrap = bootstrap;
 
-  var LogManager = _interopRequireWildcard(_aureliaLogging);
 
-  function _interopRequireWildcard(obj) {
-    if (obj && obj.__esModule) {
-      return obj;
-    } else {
-      var newObj = {};
+  var bootstrapQueue = [];
+  var sharedLoader = null;
+  var Aurelia = null;
 
-      if (obj != null) {
-        for (var key in obj) {
-          if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key];
-        }
-      }
-
-      newObj.default = obj;
-      return newObj;
-    }
-  }
-
-  
-
-  var logger = LogManager.getLogger('event-aggregator');
-
-  var Handler = function () {
-    function Handler(messageType, callback) {
-      
-
-      this.messageType = messageType;
-      this.callback = callback;
-    }
-
-    Handler.prototype.handle = function handle(message) {
-      if (message instanceof this.messageType) {
-        this.callback.call(null, message);
-      }
-    };
-
-    return Handler;
-  }();
-
-  function invokeCallback(callback, data, event) {
-    try {
-      callback(data, event);
-    } catch (e) {
-      logger.error(e);
-    }
-  }
-
-  function invokeHandler(handler, data) {
-    try {
-      handler.handle(data);
-    } catch (e) {
-      logger.error(e);
-    }
-  }
-
-  var EventAggregator = exports.EventAggregator = function () {
-    function EventAggregator() {
-      
-
-      this.eventLookup = {};
-      this.messageHandlers = [];
-    }
-
-    EventAggregator.prototype.publish = function publish(event, data) {
-      var subscribers = void 0;
-      var i = void 0;
-
-      if (!event) {
-        throw new Error('Event was invalid.');
-      }
-
-      if (typeof event === 'string') {
-        subscribers = this.eventLookup[event];
-        if (subscribers) {
-          subscribers = subscribers.slice();
-          i = subscribers.length;
-
-          while (i--) {
-            invokeCallback(subscribers[i], data, event);
-          }
-        }
+  function onBootstrap(callback) {
+    return new Promise(function (resolve, reject) {
+      if (sharedLoader) {
+        resolve(callback(sharedLoader));
       } else {
-        subscribers = this.messageHandlers.slice();
-        i = subscribers.length;
-
-        while (i--) {
-          invokeHandler(subscribers[i], event);
-        }
-      }
-    };
-
-    EventAggregator.prototype.subscribe = function subscribe(event, callback) {
-      var handler = void 0;
-      var subscribers = void 0;
-
-      if (!event) {
-        throw new Error('Event channel/type was invalid.');
-      }
-
-      if (typeof event === 'string') {
-        handler = callback;
-        subscribers = this.eventLookup[event] || (this.eventLookup[event] = []);
-      } else {
-        handler = new Handler(event, callback);
-        subscribers = this.messageHandlers;
-      }
-
-      subscribers.push(handler);
-
-      return {
-        dispose: function dispose() {
-          var idx = subscribers.indexOf(handler);
-          if (idx !== -1) {
-            subscribers.splice(idx, 1);
+        bootstrapQueue.push(function () {
+          try {
+            resolve(callback(sharedLoader));
+          } catch (e) {
+            reject(e);
           }
-        }
-      };
-    };
+        });
+      }
+    });
+  }
 
-    EventAggregator.prototype.subscribeOnce = function subscribeOnce(event, callback) {
-      var sub = this.subscribe(event, function (a, b) {
-        sub.dispose();
-        return callback(a, b);
+  function ready(global) {
+    return new Promise(function (resolve, reject) {
+      if (global.document.readyState === 'complete') {
+        resolve(global.document);
+      } else {
+        global.document.addEventListener('DOMContentLoaded', completed);
+        global.addEventListener('load', completed);
+      }
+
+      function completed() {
+        global.document.removeEventListener('DOMContentLoaded', completed);
+        global.removeEventListener('load', completed);
+        resolve(global.document);
+      }
+    });
+  }
+
+  function createLoader() {
+    if (_aureliaPal.PLATFORM.Loader) {
+      return Promise.resolve(new _aureliaPal.PLATFORM.Loader());
+    }
+
+    if (window.System && typeof window.System.import === 'function') {
+      return System.normalize('aurelia-bootstrapper').then(function (bootstrapperName) {
+        return System.normalize('aurelia-loader-default', bootstrapperName);
+      }).then(function (loaderName) {
+        return System.import(loaderName).then(function (m) {
+          return new m.DefaultLoader();
+        });
       });
+    }
 
-      return sub;
-    };
+    if (typeof window.require === 'function') {
+      return new Promise(function (resolve, reject) {
+        return require(['aurelia-loader-default'], function (m) {
+          return resolve(new m.DefaultLoader());
+        }, reject);
+      });
+    }
 
-    return EventAggregator;
-  }();
-
-  function includeEventsIn(obj) {
-    var ea = new EventAggregator();
-
-    obj.subscribeOnce = function (event, callback) {
-      return ea.subscribeOnce(event, callback);
-    };
-
-    obj.subscribe = function (event, callback) {
-      return ea.subscribe(event, callback);
-    };
-
-    obj.publish = function (event, data) {
-      ea.publish(event, data);
-    };
-
-    return ea;
+    return Promise.reject('No PLATFORM.Loader is defined and there is neither a System API (ES6) or a Require API (AMD) globally available to load your app.');
   }
 
-  function configure(config) {
-    config.instance(EventAggregator, includeEventsIn(config.aurelia));
+  function preparePlatform(loader) {
+    return loader.normalize('aurelia-bootstrapper').then(function (bootstrapperName) {
+      return loader.normalize('aurelia-framework', bootstrapperName).then(function (frameworkName) {
+        loader.map('aurelia-framework', frameworkName);
+
+        return Promise.all([loader.normalize('aurelia-dependency-injection', frameworkName).then(function (diName) {
+          return loader.map('aurelia-dependency-injection', diName);
+        }), loader.normalize('aurelia-router', bootstrapperName).then(function (routerName) {
+          return loader.map('aurelia-router', routerName);
+        }), loader.normalize('aurelia-logging-console', bootstrapperName).then(function (loggingConsoleName) {
+          return loader.map('aurelia-logging-console', loggingConsoleName);
+        })]).then(function () {
+          return loader.loadModule(frameworkName).then(function (m) {
+            return Aurelia = m.Aurelia;
+          });
+        });
+      });
+    });
   }
+
+  function handleApp(loader, appHost) {
+    var moduleId = appHost.getAttribute('aurelia-app') || appHost.getAttribute('data-aurelia-app');
+    return config(loader, appHost, moduleId);
+  }
+
+  function config(loader, appHost, configModuleId) {
+    var aurelia = new Aurelia(loader);
+    aurelia.host = appHost;
+    aurelia.configModuleId = configModuleId || null;
+
+    if (configModuleId) {
+      return loader.loadModule(configModuleId).then(function (customConfig) {
+        if (!customConfig.configure) {
+          throw new Error("Cannot initialize module '" + configModuleId + "' without a configure function.");
+        }
+
+        customConfig.configure(aurelia);
+      });
+    }
+
+    aurelia.use.standardConfiguration().developmentLogging();
+
+    return aurelia.start().then(function () {
+      return aurelia.setRoot();
+    });
+  }
+
+  function run() {
+    return ready(window).then(function (doc) {
+      (0, _aureliaPalBrowser.initialize)();
+
+      var appHost = doc.querySelectorAll('[aurelia-app],[data-aurelia-app]');
+      return createLoader().then(function (loader) {
+        return preparePlatform(loader).then(function () {
+          for (var i = 0, ii = appHost.length; i < ii; ++i) {
+            handleApp(loader, appHost[i]).catch(console.error.bind(console));
+          }
+
+          sharedLoader = loader;
+          for (var _i = 0, _ii = bootstrapQueue.length; _i < _ii; ++_i) {
+            bootstrapQueue[_i]();
+          }
+          bootstrapQueue = null;
+        });
+      });
+    });
+  }
+
+  function bootstrap(configure) {
+    return onBootstrap(function (loader) {
+      var aurelia = new Aurelia(loader);
+      return configure(aurelia);
+    });
+  }
+
+  run();
 });
 define('aurelia-framework',['exports', 'aurelia-dependency-injection', 'aurelia-binding', 'aurelia-metadata', 'aurelia-templating', 'aurelia-loader', 'aurelia-task-queue', 'aurelia-path', 'aurelia-pal', 'aurelia-logging'], function (exports, _aureliaDependencyInjection, _aureliaBinding, _aureliaMetadata, _aureliaTemplating, _aureliaLoader, _aureliaTaskQueue, _aureliaPath, _aureliaPal, _aureliaLogging) {
   'use strict';
@@ -12980,6 +12816,170 @@ define('aurelia-framework',['exports', 'aurelia-dependency-injection', 'aurelia-
 
   exports.FrameworkConfiguration = FrameworkConfiguration;
   var LogManager = exports.LogManager = TheLogManager;
+});
+define('aurelia-event-aggregator',['exports', 'aurelia-logging'], function (exports, _aureliaLogging) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.EventAggregator = undefined;
+  exports.includeEventsIn = includeEventsIn;
+  exports.configure = configure;
+
+  var LogManager = _interopRequireWildcard(_aureliaLogging);
+
+  function _interopRequireWildcard(obj) {
+    if (obj && obj.__esModule) {
+      return obj;
+    } else {
+      var newObj = {};
+
+      if (obj != null) {
+        for (var key in obj) {
+          if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key];
+        }
+      }
+
+      newObj.default = obj;
+      return newObj;
+    }
+  }
+
+  
+
+  var logger = LogManager.getLogger('event-aggregator');
+
+  var Handler = function () {
+    function Handler(messageType, callback) {
+      
+
+      this.messageType = messageType;
+      this.callback = callback;
+    }
+
+    Handler.prototype.handle = function handle(message) {
+      if (message instanceof this.messageType) {
+        this.callback.call(null, message);
+      }
+    };
+
+    return Handler;
+  }();
+
+  function invokeCallback(callback, data, event) {
+    try {
+      callback(data, event);
+    } catch (e) {
+      logger.error(e);
+    }
+  }
+
+  function invokeHandler(handler, data) {
+    try {
+      handler.handle(data);
+    } catch (e) {
+      logger.error(e);
+    }
+  }
+
+  var EventAggregator = exports.EventAggregator = function () {
+    function EventAggregator() {
+      
+
+      this.eventLookup = {};
+      this.messageHandlers = [];
+    }
+
+    EventAggregator.prototype.publish = function publish(event, data) {
+      var subscribers = void 0;
+      var i = void 0;
+
+      if (!event) {
+        throw new Error('Event was invalid.');
+      }
+
+      if (typeof event === 'string') {
+        subscribers = this.eventLookup[event];
+        if (subscribers) {
+          subscribers = subscribers.slice();
+          i = subscribers.length;
+
+          while (i--) {
+            invokeCallback(subscribers[i], data, event);
+          }
+        }
+      } else {
+        subscribers = this.messageHandlers.slice();
+        i = subscribers.length;
+
+        while (i--) {
+          invokeHandler(subscribers[i], event);
+        }
+      }
+    };
+
+    EventAggregator.prototype.subscribe = function subscribe(event, callback) {
+      var handler = void 0;
+      var subscribers = void 0;
+
+      if (!event) {
+        throw new Error('Event channel/type was invalid.');
+      }
+
+      if (typeof event === 'string') {
+        handler = callback;
+        subscribers = this.eventLookup[event] || (this.eventLookup[event] = []);
+      } else {
+        handler = new Handler(event, callback);
+        subscribers = this.messageHandlers;
+      }
+
+      subscribers.push(handler);
+
+      return {
+        dispose: function dispose() {
+          var idx = subscribers.indexOf(handler);
+          if (idx !== -1) {
+            subscribers.splice(idx, 1);
+          }
+        }
+      };
+    };
+
+    EventAggregator.prototype.subscribeOnce = function subscribeOnce(event, callback) {
+      var sub = this.subscribe(event, function (a, b) {
+        sub.dispose();
+        return callback(a, b);
+      });
+
+      return sub;
+    };
+
+    return EventAggregator;
+  }();
+
+  function includeEventsIn(obj) {
+    var ea = new EventAggregator();
+
+    obj.subscribeOnce = function (event, callback) {
+      return ea.subscribeOnce(event, callback);
+    };
+
+    obj.subscribe = function (event, callback) {
+      return ea.subscribe(event, callback);
+    };
+
+    obj.publish = function (event, data) {
+      ea.publish(event, data);
+    };
+
+    return ea;
+  }
+
+  function configure(config) {
+    config.instance(EventAggregator, includeEventsIn(config.aurelia));
+  }
 });
 define('aurelia-history',['exports'], function (exports) {
   'use strict';
@@ -16384,6 +16384,154 @@ define('aurelia-route-recognizer',['exports', 'aurelia-path'], function (exports
     return state;
   }
 });
+define('aurelia-task-queue',['exports', 'aurelia-pal'], function (exports, _aureliaPal) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.TaskQueue = undefined;
+
+  
+
+  var hasSetImmediate = typeof setImmediate === 'function';
+
+  function makeRequestFlushFromMutationObserver(flush) {
+    var toggle = 1;
+    var observer = _aureliaPal.DOM.createMutationObserver(flush);
+    var node = _aureliaPal.DOM.createTextNode('');
+    observer.observe(node, { characterData: true });
+    return function requestFlush() {
+      toggle = -toggle;
+      node.data = toggle;
+    };
+  }
+
+  function makeRequestFlushFromTimer(flush) {
+    return function requestFlush() {
+      var timeoutHandle = setTimeout(handleFlushTimer, 0);
+
+      var intervalHandle = setInterval(handleFlushTimer, 50);
+      function handleFlushTimer() {
+        clearTimeout(timeoutHandle);
+        clearInterval(intervalHandle);
+        flush();
+      }
+    };
+  }
+
+  function onError(error, task) {
+    if ('onError' in task) {
+      task.onError(error);
+    } else if (hasSetImmediate) {
+      setImmediate(function () {
+        throw error;
+      });
+    } else {
+      setTimeout(function () {
+        throw error;
+      }, 0);
+    }
+  }
+
+  var TaskQueue = exports.TaskQueue = function () {
+    function TaskQueue() {
+      var _this = this;
+
+      
+
+      this.flushing = false;
+
+      this.microTaskQueue = [];
+      this.microTaskQueueCapacity = 1024;
+      this.taskQueue = [];
+
+      if (_aureliaPal.FEATURE.mutationObserver) {
+        this.requestFlushMicroTaskQueue = makeRequestFlushFromMutationObserver(function () {
+          return _this.flushMicroTaskQueue();
+        });
+      } else {
+        this.requestFlushMicroTaskQueue = makeRequestFlushFromTimer(function () {
+          return _this.flushMicroTaskQueue();
+        });
+      }
+
+      this.requestFlushTaskQueue = makeRequestFlushFromTimer(function () {
+        return _this.flushTaskQueue();
+      });
+    }
+
+    TaskQueue.prototype.queueMicroTask = function queueMicroTask(task) {
+      if (this.microTaskQueue.length < 1) {
+        this.requestFlushMicroTaskQueue();
+      }
+
+      this.microTaskQueue.push(task);
+    };
+
+    TaskQueue.prototype.queueTask = function queueTask(task) {
+      if (this.taskQueue.length < 1) {
+        this.requestFlushTaskQueue();
+      }
+
+      this.taskQueue.push(task);
+    };
+
+    TaskQueue.prototype.flushTaskQueue = function flushTaskQueue() {
+      var queue = this.taskQueue;
+      var index = 0;
+      var task = void 0;
+
+      this.taskQueue = [];
+
+      try {
+        this.flushing = true;
+        while (index < queue.length) {
+          task = queue[index];
+          task.call();
+          index++;
+        }
+      } catch (error) {
+        onError(error, task);
+      } finally {
+        this.flushing = false;
+      }
+    };
+
+    TaskQueue.prototype.flushMicroTaskQueue = function flushMicroTaskQueue() {
+      var queue = this.microTaskQueue;
+      var capacity = this.microTaskQueueCapacity;
+      var index = 0;
+      var task = void 0;
+
+      try {
+        this.flushing = true;
+        while (index < queue.length) {
+          task = queue[index];
+          task.call();
+          index++;
+
+          if (index > capacity) {
+            for (var scan = 0, newLength = queue.length - index; scan < newLength; scan++) {
+              queue[scan] = queue[scan + index];
+            }
+
+            queue.length -= index;
+            index = 0;
+          }
+        }
+      } catch (error) {
+        onError(error, task);
+      } finally {
+        this.flushing = false;
+      }
+
+      queue.length = 0;
+    };
+
+    return TaskQueue;
+  }();
+});
 define('aurelia-router',['exports', 'aurelia-logging', 'aurelia-route-recognizer', 'aurelia-dependency-injection', 'aurelia-history', 'aurelia-event-aggregator'], function (exports, _aureliaLogging, _aureliaRouteRecognizer, _aureliaDependencyInjection, _aureliaHistory, _aureliaEventAggregator) {
   'use strict';
 
@@ -18240,154 +18388,6 @@ define('aurelia-router',['exports', 'aurelia-logging', 'aurelia-route-recognizer
       logger.error('Router navigation failed, and no previous location or fallbackRoute could be restored.');
     }
   }
-});
-define('aurelia-task-queue',['exports', 'aurelia-pal'], function (exports, _aureliaPal) {
-  'use strict';
-
-  Object.defineProperty(exports, "__esModule", {
-    value: true
-  });
-  exports.TaskQueue = undefined;
-
-  
-
-  var hasSetImmediate = typeof setImmediate === 'function';
-
-  function makeRequestFlushFromMutationObserver(flush) {
-    var toggle = 1;
-    var observer = _aureliaPal.DOM.createMutationObserver(flush);
-    var node = _aureliaPal.DOM.createTextNode('');
-    observer.observe(node, { characterData: true });
-    return function requestFlush() {
-      toggle = -toggle;
-      node.data = toggle;
-    };
-  }
-
-  function makeRequestFlushFromTimer(flush) {
-    return function requestFlush() {
-      var timeoutHandle = setTimeout(handleFlushTimer, 0);
-
-      var intervalHandle = setInterval(handleFlushTimer, 50);
-      function handleFlushTimer() {
-        clearTimeout(timeoutHandle);
-        clearInterval(intervalHandle);
-        flush();
-      }
-    };
-  }
-
-  function onError(error, task) {
-    if ('onError' in task) {
-      task.onError(error);
-    } else if (hasSetImmediate) {
-      setImmediate(function () {
-        throw error;
-      });
-    } else {
-      setTimeout(function () {
-        throw error;
-      }, 0);
-    }
-  }
-
-  var TaskQueue = exports.TaskQueue = function () {
-    function TaskQueue() {
-      var _this = this;
-
-      
-
-      this.flushing = false;
-
-      this.microTaskQueue = [];
-      this.microTaskQueueCapacity = 1024;
-      this.taskQueue = [];
-
-      if (_aureliaPal.FEATURE.mutationObserver) {
-        this.requestFlushMicroTaskQueue = makeRequestFlushFromMutationObserver(function () {
-          return _this.flushMicroTaskQueue();
-        });
-      } else {
-        this.requestFlushMicroTaskQueue = makeRequestFlushFromTimer(function () {
-          return _this.flushMicroTaskQueue();
-        });
-      }
-
-      this.requestFlushTaskQueue = makeRequestFlushFromTimer(function () {
-        return _this.flushTaskQueue();
-      });
-    }
-
-    TaskQueue.prototype.queueMicroTask = function queueMicroTask(task) {
-      if (this.microTaskQueue.length < 1) {
-        this.requestFlushMicroTaskQueue();
-      }
-
-      this.microTaskQueue.push(task);
-    };
-
-    TaskQueue.prototype.queueTask = function queueTask(task) {
-      if (this.taskQueue.length < 1) {
-        this.requestFlushTaskQueue();
-      }
-
-      this.taskQueue.push(task);
-    };
-
-    TaskQueue.prototype.flushTaskQueue = function flushTaskQueue() {
-      var queue = this.taskQueue;
-      var index = 0;
-      var task = void 0;
-
-      this.taskQueue = [];
-
-      try {
-        this.flushing = true;
-        while (index < queue.length) {
-          task = queue[index];
-          task.call();
-          index++;
-        }
-      } catch (error) {
-        onError(error, task);
-      } finally {
-        this.flushing = false;
-      }
-    };
-
-    TaskQueue.prototype.flushMicroTaskQueue = function flushMicroTaskQueue() {
-      var queue = this.microTaskQueue;
-      var capacity = this.microTaskQueueCapacity;
-      var index = 0;
-      var task = void 0;
-
-      try {
-        this.flushing = true;
-        while (index < queue.length) {
-          task = queue[index];
-          task.call();
-          index++;
-
-          if (index > capacity) {
-            for (var scan = 0, newLength = queue.length - index; scan < newLength; scan++) {
-              queue[scan] = queue[scan + index];
-            }
-
-            queue.length -= index;
-            index = 0;
-          }
-        }
-      } catch (error) {
-        onError(error, task);
-      } finally {
-        this.flushing = false;
-      }
-
-      queue.length = 0;
-    };
-
-    return TaskQueue;
-  }();
 });
 define('aurelia-templating',['exports', 'aurelia-logging', 'aurelia-metadata', 'aurelia-pal', 'aurelia-path', 'aurelia-loader', 'aurelia-dependency-injection', 'aurelia-binding', 'aurelia-task-queue'], function (exports, _aureliaLogging, _aureliaMetadata, _aureliaPal, _aureliaPath, _aureliaLoader, _aureliaDependencyInjection, _aureliaBinding, _aureliaTaskQueue) {
   'use strict';
@@ -23857,835 +23857,262 @@ define('aurelia-templating-binding',['exports', 'aurelia-logging', 'aurelia-bind
     config.container.registerAlias(_aureliaTemplating.BindingLanguage, TemplatingBindingLanguage);
   }
 });
-define('aurelia-http-client',['exports', 'aurelia-path', 'aurelia-pal'], function (exports, _aureliaPath, _aureliaPal) {
+define('aurelia-fetch-client',['exports'], function (exports) {
   'use strict';
 
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.HttpClient = exports.RequestBuilder = exports.HttpRequestMessage = exports.JSONPRequestMessage = exports.RequestMessageProcessor = exports.mimeTypes = exports.HttpResponseMessage = exports.RequestMessage = exports.Headers = undefined;
-  exports.timeoutTransformer = timeoutTransformer;
-  exports.callbackParameterNameTransformer = callbackParameterNameTransformer;
-  exports.credentialsTransformer = credentialsTransformer;
-  exports.progressTransformer = progressTransformer;
-  exports.responseTypeTransformer = responseTypeTransformer;
-  exports.headerTransformer = headerTransformer;
-  exports.contentTransformer = contentTransformer;
-  exports.createJSONPRequestMessageProcessor = createJSONPRequestMessageProcessor;
-  exports.createHttpRequestMessageProcessor = createHttpRequestMessageProcessor;
+  exports.json = json;
 
-  function _possibleConstructorReturn(self, call) {
-    if (!self) {
-      throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-    }
-
-    return call && (typeof call === "object" || typeof call === "function") ? call : self;
-  }
-
-  function _inherits(subClass, superClass) {
-    if (typeof superClass !== "function" && superClass !== null) {
-      throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
-    }
-
-    subClass.prototype = Object.create(superClass && superClass.prototype, {
-      constructor: {
-        value: subClass,
-        enumerable: false,
-        writable: true,
-        configurable: true
-      }
-    });
-    if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
-  }
-
-  var _createClass = function () {
-    function defineProperties(target, props) {
-      for (var i = 0; i < props.length; i++) {
-        var descriptor = props[i];
-        descriptor.enumerable = descriptor.enumerable || false;
-        descriptor.configurable = true;
-        if ("value" in descriptor) descriptor.writable = true;
-        Object.defineProperty(target, descriptor.key, descriptor);
-      }
-    }
-
-    return function (Constructor, protoProps, staticProps) {
-      if (protoProps) defineProperties(Constructor.prototype, protoProps);
-      if (staticProps) defineProperties(Constructor, staticProps);
-      return Constructor;
-    };
-  }();
+  var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
+    return typeof obj;
+  } : function (obj) {
+    return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj;
+  };
 
   
 
-  var Headers = exports.Headers = function () {
-    function Headers() {
-      var headers = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+  function json(body) {
+    return new Blob([JSON.stringify(body)], { type: 'application/json' });
+  }
 
+  var HttpClientConfiguration = exports.HttpClientConfiguration = function () {
+    function HttpClientConfiguration() {
       
 
-      this.headers = {};
-
-      for (var _key in headers) {
-        this.headers[_key.toLowerCase()] = { key: _key, value: headers[_key] };
-      }
-    }
-
-    Headers.prototype.add = function add(key, value) {
-      this.headers[key.toLowerCase()] = { key: key, value: value };
-    };
-
-    Headers.prototype.get = function get(key) {
-      var header = this.headers[key.toLowerCase()];
-      return header ? header.value : undefined;
-    };
-
-    Headers.prototype.clear = function clear() {
-      this.headers = {};
-    };
-
-    Headers.prototype.has = function has(header) {
-      return this.headers.hasOwnProperty(header.toLowerCase());
-    };
-
-    Headers.prototype.configureXHR = function configureXHR(xhr) {
-      for (var name in this.headers) {
-        if (this.headers.hasOwnProperty(name)) {
-          xhr.setRequestHeader(this.headers[name].key, this.headers[name].value);
-        }
-      }
-    };
-
-    Headers.parse = function parse(headerStr) {
-      var headers = new Headers();
-      if (!headerStr) {
-        return headers;
-      }
-
-      var headerPairs = headerStr.split('\r\n');
-      for (var i = 0; i < headerPairs.length; i++) {
-        var headerPair = headerPairs[i];
-
-        var index = headerPair.indexOf(': ');
-        if (index > 0) {
-          var _key2 = headerPair.substring(0, index);
-          var val = headerPair.substring(index + 2);
-          headers.add(_key2, val);
-        }
-      }
-
-      return headers;
-    };
-
-    return Headers;
-  }();
-
-  var RequestMessage = exports.RequestMessage = function () {
-    function RequestMessage(method, url, content, headers) {
-      
-
-      this.method = method;
-      this.url = url;
-      this.content = content;
-      this.headers = headers || new Headers();
       this.baseUrl = '';
+      this.defaults = {};
+      this.interceptors = [];
     }
 
-    RequestMessage.prototype.buildFullUrl = function buildFullUrl() {
-      var absoluteUrl = /^([a-z][a-z0-9+\-.]*:)?\/\//i;
-      var url = absoluteUrl.test(this.url) ? this.url : (0, _aureliaPath.join)(this.baseUrl, this.url);
-
-      if (this.params) {
-        var qs = (0, _aureliaPath.buildQueryString)(this.params);
-        url = qs ? url + (this.url.indexOf('?') < 0 ? '?' : '&') + qs : url;
-      }
-
-      return url;
-    };
-
-    return RequestMessage;
-  }();
-
-  var HttpResponseMessage = exports.HttpResponseMessage = function () {
-    function HttpResponseMessage(requestMessage, xhr, responseType, reviver) {
-      
-
-      this.requestMessage = requestMessage;
-      this.statusCode = xhr.status;
-      this.response = xhr.response || xhr.responseText;
-      this.isSuccess = xhr.status >= 200 && xhr.status < 400;
-      this.statusText = xhr.statusText;
-      this.reviver = reviver;
-      this.mimeType = null;
-
-      if (xhr.getAllResponseHeaders) {
-        try {
-          this.headers = Headers.parse(xhr.getAllResponseHeaders());
-        } catch (err) {
-          if (xhr.requestHeaders) this.headers = new Headers(xhr.requestHeaders);
-        }
-      } else {
-        this.headers = new Headers();
-      }
-
-      var contentType = void 0;
-
-      if (this.headers && this.headers.headers) {
-        contentType = this.headers.get('Content-Type');
-      }
-
-      if (contentType) {
-        this.mimeType = responseType = contentType.split(';')[0].trim();
-        if (mimeTypes.hasOwnProperty(this.mimeType)) responseType = mimeTypes[this.mimeType];
-      }
-
-      this.responseType = responseType;
-    }
-
-    _createClass(HttpResponseMessage, [{
-      key: 'content',
-      get: function get() {
-        try {
-          if (this._content !== undefined) {
-            return this._content;
-          }
-
-          if (this.response === undefined || this.response === null || this.response === '') {
-            this._content = this.response;
-            return this._content;
-          }
-
-          if (this.responseType === 'json') {
-            this._content = JSON.parse(this.response, this.reviver);
-            return this._content;
-          }
-
-          if (this.reviver) {
-            this._content = this.reviver(this.response);
-            return this._content;
-          }
-
-          this._content = this.response;
-          return this._content;
-        } catch (e) {
-          if (this.isSuccess) {
-            throw e;
-          }
-
-          this._content = null;
-          return this._content;
-        }
-      }
-    }]);
-
-    return HttpResponseMessage;
-  }();
-
-  var mimeTypes = exports.mimeTypes = {
-    'text/html': 'html',
-    'text/javascript': 'js',
-    'application/javascript': 'js',
-    'text/json': 'json',
-    'application/json': 'json',
-    'application/rss+xml': 'rss',
-    'application/atom+xml': 'atom',
-    'application/xhtml+xml': 'xhtml',
-    'text/markdown': 'md',
-    'text/xml': 'xml',
-    'text/mathml': 'mml',
-    'application/xml': 'xml',
-    'text/yml': 'yml',
-    'text/csv': 'csv',
-    'text/css': 'css',
-    'text/less': 'less',
-    'text/stylus': 'styl',
-    'text/scss': 'scss',
-    'text/sass': 'sass',
-    'text/plain': 'txt'
-  };
-
-  function applyXhrTransformers(xhrTransformers, client, processor, message, xhr) {
-    var i = void 0;
-    var ii = void 0;
-
-    for (i = 0, ii = xhrTransformers.length; i < ii; ++i) {
-      xhrTransformers[i](client, processor, message, xhr);
-    }
-  }
-
-  var RequestMessageProcessor = exports.RequestMessageProcessor = function () {
-    function RequestMessageProcessor(xhrType, xhrTransformers) {
-      
-
-      this.XHRType = xhrType;
-      this.xhrTransformers = xhrTransformers;
-      this.isAborted = false;
-    }
-
-    RequestMessageProcessor.prototype.abort = function abort() {
-      if (this.xhr && this.xhr.readyState !== _aureliaPal.PLATFORM.XMLHttpRequest.UNSENT) {
-        this.xhr.abort();
-      }
-
-      this.isAborted = true;
-    };
-
-    RequestMessageProcessor.prototype.process = function process(client, requestMessage) {
-      var _this = this;
-
-      var promise = new Promise(function (resolve, reject) {
-        var xhr = _this.xhr = new _this.XHRType();
-
-        xhr.onload = function (e) {
-          var response = new HttpResponseMessage(requestMessage, xhr, requestMessage.responseType, requestMessage.reviver);
-          if (response.isSuccess) {
-            resolve(response);
-          } else {
-            reject(response);
-          }
-        };
-
-        xhr.ontimeout = function (e) {
-          reject(new HttpResponseMessage(requestMessage, {
-            response: e,
-            status: xhr.status,
-            statusText: xhr.statusText
-          }, 'timeout'));
-        };
-
-        xhr.onerror = function (e) {
-          reject(new HttpResponseMessage(requestMessage, {
-            response: e,
-            status: xhr.status,
-            statusText: xhr.statusText
-          }, 'error'));
-        };
-
-        xhr.onabort = function (e) {
-          reject(new HttpResponseMessage(requestMessage, {
-            response: e,
-            status: xhr.status,
-            statusText: xhr.statusText
-          }, 'abort'));
-        };
-      });
-
-      return Promise.resolve(requestMessage).then(function (message) {
-        var processRequest = function processRequest() {
-          if (_this.isAborted) {
-            _this.xhr.abort();
-          } else {
-            _this.xhr.open(message.method, message.buildFullUrl(), true, message.user, message.password);
-            applyXhrTransformers(_this.xhrTransformers, client, _this, message, _this.xhr);
-            if (typeof message.content === 'undefined') {
-              _this.xhr.send();
-            } else {
-              _this.xhr.send(message.content);
-            }
-          }
-
-          return promise;
-        };
-
-        var chain = [[processRequest, undefined]];
-
-        var interceptors = message.interceptors || [];
-        interceptors.forEach(function (interceptor) {
-          if (interceptor.request || interceptor.requestError) {
-            chain.unshift([interceptor.request ? interceptor.request.bind(interceptor) : undefined, interceptor.requestError ? interceptor.requestError.bind(interceptor) : undefined]);
-          }
-
-          if (interceptor.response || interceptor.responseError) {
-            chain.push([interceptor.response ? interceptor.response.bind(interceptor) : undefined, interceptor.responseError ? interceptor.responseError.bind(interceptor) : undefined]);
-          }
-        });
-
-        var interceptorsPromise = Promise.resolve(message);
-
-        while (chain.length) {
-          var _interceptorsPromise;
-
-          interceptorsPromise = (_interceptorsPromise = interceptorsPromise).then.apply(_interceptorsPromise, chain.shift());
-        }
-
-        return interceptorsPromise;
-      });
-    };
-
-    return RequestMessageProcessor;
-  }();
-
-  function timeoutTransformer(client, processor, message, xhr) {
-    if (message.timeout !== undefined) {
-      xhr.timeout = message.timeout;
-    }
-  }
-
-  function callbackParameterNameTransformer(client, processor, message, xhr) {
-    if (message.callbackParameterName !== undefined) {
-      xhr.callbackParameterName = message.callbackParameterName;
-    }
-  }
-
-  function credentialsTransformer(client, processor, message, xhr) {
-    if (message.withCredentials !== undefined) {
-      xhr.withCredentials = message.withCredentials;
-    }
-  }
-
-  function progressTransformer(client, processor, message, xhr) {
-    if (message.progressCallback) {
-      xhr.upload.onprogress = message.progressCallback;
-    }
-  }
-
-  function responseTypeTransformer(client, processor, message, xhr) {
-    var responseType = message.responseType;
-
-    if (responseType === 'json') {
-      responseType = 'text';
-    }
-
-    xhr.responseType = responseType;
-  }
-
-  function headerTransformer(client, processor, message, xhr) {
-    message.headers.configureXHR(xhr);
-  }
-
-  function contentTransformer(client, processor, message, xhr) {
-    if (message.skipContentProcessing) {
-      return;
-    }
-
-    if (_aureliaPal.PLATFORM.global.FormData && message.content instanceof FormData) {
-      return;
-    }
-
-    if (_aureliaPal.PLATFORM.global.Blob && message.content instanceof Blob) {
-      return;
-    }
-
-    if (_aureliaPal.PLATFORM.global.ArrayBufferView && message.content instanceof ArrayBufferView) {
-      return;
-    }
-
-    if (message.content instanceof Document) {
-      return;
-    }
-
-    if (typeof message.content === 'string') {
-      return;
-    }
-
-    if (message.content === null || message.content === undefined) {
-      return;
-    }
-
-    message.content = JSON.stringify(message.content, message.replacer);
-
-    if (!message.headers.has('Content-Type')) {
-      message.headers.add('Content-Type', 'application/json');
-    }
-  }
-
-  var JSONPRequestMessage = exports.JSONPRequestMessage = function (_RequestMessage) {
-    _inherits(JSONPRequestMessage, _RequestMessage);
-
-    function JSONPRequestMessage(url, callbackParameterName) {
-      
-
-      var _this2 = _possibleConstructorReturn(this, _RequestMessage.call(this, 'JSONP', url));
-
-      _this2.responseType = 'jsonp';
-      _this2.callbackParameterName = callbackParameterName;
-      return _this2;
-    }
-
-    return JSONPRequestMessage;
-  }(RequestMessage);
-
-  var JSONPXHR = function () {
-    function JSONPXHR() {
-      
-    }
-
-    JSONPXHR.prototype.open = function open(method, url) {
-      this.method = method;
-      this.url = url;
-      this.callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-    };
-
-    JSONPXHR.prototype.send = function send() {
-      var _this3 = this;
-
-      var url = this.url + (this.url.indexOf('?') >= 0 ? '&' : '?') + encodeURIComponent(this.callbackParameterName) + '=' + this.callbackName;
-      var script = _aureliaPal.DOM.createElement('script');
-
-      script.src = url;
-      script.onerror = function (e) {
-        cleanUp();
-
-        _this3.status = 0;
-        _this3.onerror(new Error('error'));
-      };
-
-      var cleanUp = function cleanUp() {
-        delete _aureliaPal.PLATFORM.global[_this3.callbackName];
-        _aureliaPal.DOM.removeNode(script);
-      };
-
-      _aureliaPal.PLATFORM.global[this.callbackName] = function (data) {
-        cleanUp();
-
-        if (_this3.status === undefined) {
-          _this3.status = 200;
-          _this3.statusText = 'OK';
-          _this3.response = data;
-          _this3.onload(_this3);
-        }
-      };
-
-      _aureliaPal.DOM.appendNode(script);
-
-      if (this.timeout !== undefined) {
-        setTimeout(function () {
-          if (_this3.status === undefined) {
-            _this3.status = 0;
-            _this3.ontimeout(new Error('timeout'));
-          }
-        }, this.timeout);
-      }
-    };
-
-    JSONPXHR.prototype.abort = function abort() {
-      if (this.status === undefined) {
-        this.status = 0;
-        this.onabort(new Error('abort'));
-      }
-    };
-
-    JSONPXHR.prototype.setRequestHeader = function setRequestHeader() {};
-
-    return JSONPXHR;
-  }();
-
-  function createJSONPRequestMessageProcessor() {
-    return new RequestMessageProcessor(JSONPXHR, [timeoutTransformer, callbackParameterNameTransformer]);
-  }
-
-  var HttpRequestMessage = exports.HttpRequestMessage = function (_RequestMessage2) {
-    _inherits(HttpRequestMessage, _RequestMessage2);
-
-    function HttpRequestMessage(method, url, content, headers) {
-      
-
-      var _this4 = _possibleConstructorReturn(this, _RequestMessage2.call(this, method, url, content, headers));
-
-      _this4.responseType = 'json';return _this4;
-    }
-
-    return HttpRequestMessage;
-  }(RequestMessage);
-
-  function createHttpRequestMessageProcessor() {
-    return new RequestMessageProcessor(_aureliaPal.PLATFORM.XMLHttpRequest, [timeoutTransformer, credentialsTransformer, progressTransformer, responseTypeTransformer, contentTransformer, headerTransformer]);
-  }
-
-  var RequestBuilder = exports.RequestBuilder = function () {
-    function RequestBuilder(client) {
-      
-
-      this.client = client;
-      this.transformers = client.requestTransformers.slice(0);
-      this.useJsonp = false;
-    }
-
-    RequestBuilder.prototype.asDelete = function asDelete() {
-      return this._addTransformer(function (client, processor, message) {
-        message.method = 'DELETE';
-      });
-    };
-
-    RequestBuilder.prototype.asGet = function asGet() {
-      return this._addTransformer(function (client, processor, message) {
-        message.method = 'GET';
-      });
-    };
-
-    RequestBuilder.prototype.asHead = function asHead() {
-      return this._addTransformer(function (client, processor, message) {
-        message.method = 'HEAD';
-      });
-    };
-
-    RequestBuilder.prototype.asOptions = function asOptions() {
-      return this._addTransformer(function (client, processor, message) {
-        message.method = 'OPTIONS';
-      });
-    };
-
-    RequestBuilder.prototype.asPatch = function asPatch() {
-      return this._addTransformer(function (client, processor, message) {
-        message.method = 'PATCH';
-      });
-    };
-
-    RequestBuilder.prototype.asPost = function asPost() {
-      return this._addTransformer(function (client, processor, message) {
-        message.method = 'POST';
-      });
-    };
-
-    RequestBuilder.prototype.asPut = function asPut() {
-      return this._addTransformer(function (client, processor, message) {
-        message.method = 'PUT';
-      });
-    };
-
-    RequestBuilder.prototype.asJsonp = function asJsonp(callbackParameterName) {
-      this.useJsonp = true;
-      return this._addTransformer(function (client, processor, message) {
-        message.callbackParameterName = callbackParameterName;
-      });
-    };
-
-    RequestBuilder.prototype.withUrl = function withUrl(url) {
-      return this._addTransformer(function (client, processor, message) {
-        message.url = url;
-      });
-    };
-
-    RequestBuilder.prototype.withContent = function withContent(content) {
-      return this._addTransformer(function (client, processor, message) {
-        message.content = content;
-      });
-    };
-
-    RequestBuilder.prototype.withBaseUrl = function withBaseUrl(baseUrl) {
-      return this._addTransformer(function (client, processor, message) {
-        message.baseUrl = baseUrl;
-      });
-    };
-
-    RequestBuilder.prototype.withParams = function withParams(params) {
-      return this._addTransformer(function (client, processor, message) {
-        message.params = params;
-      });
-    };
-
-    RequestBuilder.prototype.withResponseType = function withResponseType(responseType) {
-      return this._addTransformer(function (client, processor, message) {
-        message.responseType = responseType;
-      });
-    };
-
-    RequestBuilder.prototype.withTimeout = function withTimeout(timeout) {
-      return this._addTransformer(function (client, processor, message) {
-        message.timeout = timeout;
-      });
-    };
-
-    RequestBuilder.prototype.withHeader = function withHeader(key, value) {
-      return this._addTransformer(function (client, processor, message) {
-        message.headers.add(key, value);
-      });
-    };
-
-    RequestBuilder.prototype.withCredentials = function withCredentials(value) {
-      return this._addTransformer(function (client, processor, message) {
-        message.withCredentials = value;
-      });
-    };
-
-    RequestBuilder.prototype.withLogin = function withLogin(user, password) {
-      return this._addTransformer(function (client, processor, message) {
-        message.user = user;message.password = password;
-      });
-    };
-
-    RequestBuilder.prototype.withReviver = function withReviver(reviver) {
-      return this._addTransformer(function (client, processor, message) {
-        message.reviver = reviver;
-      });
-    };
-
-    RequestBuilder.prototype.withReplacer = function withReplacer(replacer) {
-      return this._addTransformer(function (client, processor, message) {
-        message.replacer = replacer;
-      });
-    };
-
-    RequestBuilder.prototype.withProgressCallback = function withProgressCallback(progressCallback) {
-      return this._addTransformer(function (client, processor, message) {
-        message.progressCallback = progressCallback;
-      });
-    };
-
-    RequestBuilder.prototype.withCallbackParameterName = function withCallbackParameterName(callbackParameterName) {
-      return this._addTransformer(function (client, processor, message) {
-        message.callbackParameterName = callbackParameterName;
-      });
-    };
-
-    RequestBuilder.prototype.withInterceptor = function withInterceptor(interceptor) {
-      return this._addTransformer(function (client, processor, message) {
-        message.interceptors = message.interceptors || [];
-        message.interceptors.unshift(interceptor);
-      });
-    };
-
-    RequestBuilder.prototype.skipContentProcessing = function skipContentProcessing() {
-      return this._addTransformer(function (client, processor, message) {
-        message.skipContentProcessing = true;
-      });
-    };
-
-    RequestBuilder.prototype._addTransformer = function _addTransformer(fn) {
-      this.transformers.push(fn);
+    HttpClientConfiguration.prototype.withBaseUrl = function withBaseUrl(baseUrl) {
+      this.baseUrl = baseUrl;
       return this;
     };
 
-    RequestBuilder.addHelper = function addHelper(name, fn) {
-      RequestBuilder.prototype[name] = function () {
-        return this._addTransformer(fn.apply(this, arguments));
-      };
+    HttpClientConfiguration.prototype.withDefaults = function withDefaults(defaults) {
+      this.defaults = defaults;
+      return this;
     };
 
-    RequestBuilder.prototype.send = function send() {
-      var message = this.useJsonp ? new JSONPRequestMessage() : new HttpRequestMessage();
-      return this.client.send(message, this.transformers);
+    HttpClientConfiguration.prototype.withInterceptor = function withInterceptor(interceptor) {
+      this.interceptors.push(interceptor);
+      return this;
     };
 
-    return RequestBuilder;
+    HttpClientConfiguration.prototype.useStandardConfiguration = function useStandardConfiguration() {
+      var standardConfig = { credentials: 'same-origin' };
+      Object.assign(this.defaults, standardConfig, this.defaults);
+      return this.rejectErrorResponses();
+    };
+
+    HttpClientConfiguration.prototype.rejectErrorResponses = function rejectErrorResponses() {
+      return this.withInterceptor({ response: rejectOnError });
+    };
+
+    return HttpClientConfiguration;
   }();
 
-  function trackRequestStart(client, processor) {
-    client.pendingRequests.push(processor);
-    client.isRequesting = true;
-  }
-
-  function trackRequestEnd(client, processor) {
-    var index = client.pendingRequests.indexOf(processor);
-
-    client.pendingRequests.splice(index, 1);
-    client.isRequesting = client.pendingRequests.length > 0;
-
-    if (!client.isRequesting) {
-      (function () {
-        var evt = _aureliaPal.DOM.createCustomEvent('aurelia-http-client-requests-drained', { bubbles: true, cancelable: true });
-        setTimeout(function () {
-          return _aureliaPal.DOM.dispatchEvent(evt);
-        }, 1);
-      })();
+  function rejectOnError(response) {
+    if (!response.ok) {
+      throw response;
     }
+
+    return response;
   }
 
   var HttpClient = exports.HttpClient = function () {
     function HttpClient() {
       
 
+      this.activeRequestCount = 0;
       this.isRequesting = false;
+      this.isConfigured = false;
+      this.baseUrl = '';
+      this.defaults = null;
+      this.interceptors = [];
 
-      this.requestTransformers = [];
-      this.requestProcessorFactories = new Map();
-      this.requestProcessorFactories.set(HttpRequestMessage, createHttpRequestMessageProcessor);
-      this.requestProcessorFactories.set(JSONPRequestMessage, createJSONPRequestMessageProcessor);
-      this.pendingRequests = [];
+      if (typeof fetch === 'undefined') {
+        throw new Error('HttpClient requires a Fetch API implementation, but the current environment doesn\'t support it. You may need to load a polyfill such as https://github.com/github/fetch.');
+      }
     }
 
-    HttpClient.prototype.configure = function configure(fn) {
-      var builder = new RequestBuilder(this);
-      fn(builder);
-      this.requestTransformers = builder.transformers;
+    HttpClient.prototype.configure = function configure(config) {
+      var normalizedConfig = void 0;
+
+      if ((typeof config === 'undefined' ? 'undefined' : _typeof(config)) === 'object') {
+        normalizedConfig = { defaults: config };
+      } else if (typeof config === 'function') {
+        normalizedConfig = new HttpClientConfiguration();
+        normalizedConfig.baseUrl = this.baseUrl;
+        normalizedConfig.defaults = Object.assign({}, this.defaults);
+        normalizedConfig.interceptors = this.interceptors;
+
+        var c = config(normalizedConfig);
+        if (HttpClientConfiguration.prototype.isPrototypeOf(c)) {
+          normalizedConfig = c;
+        }
+      } else {
+        throw new Error('invalid config');
+      }
+
+      var defaults = normalizedConfig.defaults;
+      if (defaults && Headers.prototype.isPrototypeOf(defaults.headers)) {
+        throw new Error('Default headers must be a plain object.');
+      }
+
+      this.baseUrl = normalizedConfig.baseUrl;
+      this.defaults = defaults;
+      this.interceptors = normalizedConfig.interceptors || [];
+      this.isConfigured = true;
+
       return this;
     };
 
-    HttpClient.prototype.createRequest = function createRequest(url) {
-      var builder = new RequestBuilder(this);
-
-      if (url) {
-        builder.withUrl(url);
+    HttpClient.prototype.fetch = function (_fetch) {
+      function fetch(_x, _x2) {
+        return _fetch.apply(this, arguments);
       }
 
-      return builder;
-    };
+      fetch.toString = function () {
+        return _fetch.toString();
+      };
 
-    HttpClient.prototype.send = function send(requestMessage, transformers) {
-      var _this5 = this;
+      return fetch;
+    }(function (input, init) {
+      var _this = this;
 
-      var createProcessor = this.requestProcessorFactories.get(requestMessage.constructor);
-      var processor = void 0;
-      var promise = void 0;
-      var i = void 0;
-      var ii = void 0;
+      trackRequestStart.call(this);
 
-      if (!createProcessor) {
-        throw new Error('No request message processor factory for ' + requestMessage.constructor + '.');
-      }
+      var request = Promise.resolve().then(function () {
+        return buildRequest.call(_this, input, init, _this.defaults);
+      });
+      var promise = processRequest(request, this.interceptors).then(function (result) {
+        var response = null;
 
-      processor = createProcessor();
-      trackRequestStart(this, processor);
-
-      transformers = transformers || this.requestTransformers;
-
-      promise = Promise.resolve(requestMessage).then(function (message) {
-        for (i = 0, ii = transformers.length; i < ii; ++i) {
-          transformers[i](_this5, processor, message);
+        if (Response.prototype.isPrototypeOf(result)) {
+          response = result;
+        } else if (Request.prototype.isPrototypeOf(result)) {
+          request = Promise.resolve(result);
+          response = fetch(result);
+        } else {
+          throw new Error('An invalid result was returned by the interceptor chain. Expected a Request or Response instance, but got [' + result + ']');
         }
 
-        return processor.process(_this5, message).then(function (response) {
-          trackRequestEnd(_this5, processor);
-          return response;
-        }).catch(function (response) {
-          trackRequestEnd(_this5, processor);
-          throw response;
+        return request.then(function (_request) {
+          return processResponse(response, _this.interceptors, _request);
         });
       });
 
-      promise.abort = promise.cancel = function () {
-        processor.abort();
-      };
-
-      return promise;
-    };
-
-    HttpClient.prototype.delete = function _delete(url) {
-      return this.createRequest(url).asDelete().send();
-    };
-
-    HttpClient.prototype.get = function get(url) {
-      return this.createRequest(url).asGet().send();
-    };
-
-    HttpClient.prototype.head = function head(url) {
-      return this.createRequest(url).asHead().send();
-    };
-
-    HttpClient.prototype.jsonp = function jsonp(url) {
-      var callbackParameterName = arguments.length <= 1 || arguments[1] === undefined ? 'jsoncallback' : arguments[1];
-
-      return this.createRequest(url).asJsonp(callbackParameterName).send();
-    };
-
-    HttpClient.prototype.options = function options(url) {
-      return this.createRequest(url).asOptions().send();
-    };
-
-    HttpClient.prototype.put = function put(url, content) {
-      return this.createRequest(url).asPut().withContent(content).send();
-    };
-
-    HttpClient.prototype.patch = function patch(url, content) {
-      return this.createRequest(url).asPatch().withContent(content).send();
-    };
-
-    HttpClient.prototype.post = function post(url, content) {
-      return this.createRequest(url).asPost().withContent(content).send();
-    };
+      return trackRequestEndWith.call(this, promise);
+    });
 
     return HttpClient;
   }();
+
+  var absoluteUrlRegexp = /^([a-z][a-z0-9+\-.]*:)?\/\//i;
+
+  function trackRequestStart() {
+    this.isRequesting = !! ++this.activeRequestCount;
+  }
+
+  function trackRequestEnd() {
+    this.isRequesting = !! --this.activeRequestCount;
+  }
+
+  function trackRequestEndWith(promise) {
+    var handle = trackRequestEnd.bind(this);
+    promise.then(handle, handle);
+    return promise;
+  }
+
+  function parseHeaderValues(headers) {
+    var parsedHeaders = {};
+    for (var name in headers || {}) {
+      if (headers.hasOwnProperty(name)) {
+        parsedHeaders[name] = typeof headers[name] === 'function' ? headers[name]() : headers[name];
+      }
+    }
+    return parsedHeaders;
+  }
+
+  function buildRequest(input, init) {
+    var defaults = this.defaults || {};
+    var request = void 0;
+    var body = void 0;
+    var requestContentType = void 0;
+
+    var parsedDefaultHeaders = parseHeaderValues(defaults.headers);
+    if (Request.prototype.isPrototypeOf(input)) {
+      request = input;
+      requestContentType = new Headers(request.headers).get('Content-Type');
+    } else {
+      init || (init = {});
+      body = init.body;
+      var bodyObj = body ? { body: body } : null;
+      var requestInit = Object.assign({}, defaults, { headers: {} }, init, bodyObj);
+      requestContentType = new Headers(requestInit.headers).get('Content-Type');
+      request = new Request(getRequestUrl(this.baseUrl, input), requestInit);
+    }
+    if (!requestContentType && new Headers(parsedDefaultHeaders).has('content-type')) {
+      request.headers.set('Content-Type', new Headers(parsedDefaultHeaders).get('content-type'));
+    }
+    setDefaultHeaders(request.headers, parsedDefaultHeaders);
+    if (body && Blob.prototype.isPrototypeOf(body) && body.type) {
+      request.headers.set('Content-Type', body.type);
+    }
+    return request;
+  }
+
+  function getRequestUrl(baseUrl, url) {
+    if (absoluteUrlRegexp.test(url)) {
+      return url;
+    }
+
+    return (baseUrl || '') + url;
+  }
+
+  function setDefaultHeaders(headers, defaultHeaders) {
+    for (var name in defaultHeaders || {}) {
+      if (defaultHeaders.hasOwnProperty(name) && !headers.has(name)) {
+        headers.set(name, defaultHeaders[name]);
+      }
+    }
+  }
+
+  function processRequest(request, interceptors) {
+    return applyInterceptors(request, interceptors, 'request', 'requestError');
+  }
+
+  function processResponse(response, interceptors, request) {
+    return applyInterceptors(response, interceptors, 'response', 'responseError', request);
+  }
+
+  function applyInterceptors(input, interceptors, successName, errorName) {
+    for (var _len = arguments.length, interceptorArgs = Array(_len > 4 ? _len - 4 : 0), _key = 4; _key < _len; _key++) {
+      interceptorArgs[_key - 4] = arguments[_key];
+    }
+
+    return (interceptors || []).reduce(function (chain, interceptor) {
+      var successHandler = interceptor[successName];
+      var errorHandler = interceptor[errorName];
+
+      return chain.then(successHandler && function (value) {
+        return successHandler.call.apply(successHandler, [interceptor, value].concat(interceptorArgs));
+      } || identity, errorHandler && function (reason) {
+        return errorHandler.call.apply(errorHandler, [interceptor, reason].concat(interceptorArgs));
+      } || thrower);
+    }, Promise.resolve(input));
+  }
+
+  function identity(x) {
+    return x;
+  }
+
+  function thrower(x) {
+    throw x;
+  }
 });
 define('text',{});
 define('aurelia-templating-resources/aurelia-templating-resources',['exports', './compose', './if', './with', './repeat', './show', './hide', './sanitize-html', './replaceable', './focus', 'aurelia-templating', './css-resource', './html-sanitizer', './attr-binding-behavior', './binding-mode-behaviors', './throttle-binding-behavior', './debounce-binding-behavior', './signal-binding-behavior', './binding-signaler', './update-trigger-binding-behavior', './abstract-repeater', './repeat-strategy-locator', './html-resource-plugin', './null-repeat-strategy', './array-repeat-strategy', './map-repeat-strategy', './set-repeat-strategy', './number-repeat-strategy', './repeat-utilities', './analyze-view-factory', './aurelia-hide-style'], function (exports, _compose, _if, _with, _repeat, _show, _hide, _sanitizeHtml, _replaceable, _focus, _aureliaTemplating, _cssResource, _htmlSanitizer, _attrBindingBehavior, _bindingModeBehaviors, _throttleBindingBehavior, _debounceBindingBehavior, _signalBindingBehavior, _bindingSignaler, _updateTriggerBindingBehavior, _abstractRepeater, _repeatStrategyLocator, _htmlResourcePlugin, _nullRepeatStrategy, _arrayRepeatStrategy, _mapRepeatStrategy, _setRepeatStrategy, _numberRepeatStrategy, _repeatUtilities, _analyzeViewFactory, _aureliaHideStyle) {
@@ -27767,4 +27194,4 @@ define('aurelia-testing/component-tester',['exports', 'aurelia-templating', 'aur
     return ComponentTester;
   }();
 });
-function _aureliaConfigureModuleLoader(){requirejs.config({"baseUrl":"src/","paths":{"aurelia-binding":"../node_modules\\aurelia-binding\\dist\\amd\\aurelia-binding","aurelia-bootstrapper":"../node_modules\\aurelia-bootstrapper\\dist\\amd\\aurelia-bootstrapper","aurelia-dependency-injection":"../node_modules\\aurelia-dependency-injection\\dist\\amd\\aurelia-dependency-injection","aurelia-event-aggregator":"../node_modules\\aurelia-event-aggregator\\dist\\amd\\aurelia-event-aggregator","aurelia-framework":"../node_modules\\aurelia-framework\\dist\\amd\\aurelia-framework","aurelia-history":"../node_modules\\aurelia-history\\dist\\amd\\aurelia-history","aurelia-history-browser":"../node_modules\\aurelia-history-browser\\dist\\amd\\aurelia-history-browser","aurelia-loader":"../node_modules\\aurelia-loader\\dist\\amd\\aurelia-loader","aurelia-loader-default":"../node_modules\\aurelia-loader-default\\dist\\amd\\aurelia-loader-default","aurelia-logging":"../node_modules\\aurelia-logging\\dist\\amd\\aurelia-logging","aurelia-logging-console":"../node_modules\\aurelia-logging-console\\dist\\amd\\aurelia-logging-console","aurelia-metadata":"../node_modules\\aurelia-metadata\\dist\\amd\\aurelia-metadata","aurelia-pal":"../node_modules\\aurelia-pal\\dist\\amd\\aurelia-pal","aurelia-pal-browser":"../node_modules\\aurelia-pal-browser\\dist\\amd\\aurelia-pal-browser","aurelia-path":"../node_modules\\aurelia-path\\dist\\amd\\aurelia-path","aurelia-polyfills":"../node_modules\\aurelia-polyfills\\dist\\amd\\aurelia-polyfills","aurelia-route-recognizer":"../node_modules\\aurelia-route-recognizer\\dist\\amd\\aurelia-route-recognizer","aurelia-router":"../node_modules\\aurelia-router\\dist\\amd\\aurelia-router","aurelia-task-queue":"../node_modules\\aurelia-task-queue\\dist\\amd\\aurelia-task-queue","aurelia-templating":"../node_modules\\aurelia-templating\\dist\\amd\\aurelia-templating","aurelia-templating-binding":"../node_modules\\aurelia-templating-binding\\dist\\amd\\aurelia-templating-binding","aurelia-http-client":"../node_modules\\aurelia-http-client\\dist\\amd\\aurelia-http-client","text":"../node_modules\\text\\text","app-bundle":"../scripts/app-bundle"},"packages":[{"name":"aurelia-templating-resources","location":"../node_modules/aurelia-templating-resources/dist/amd","main":"aurelia-templating-resources"},{"name":"aurelia-templating-router","location":"../node_modules/aurelia-templating-router/dist/amd","main":"aurelia-templating-router"},{"name":"aurelia-testing","location":"../node_modules/aurelia-testing/dist/amd","main":"aurelia-testing"}],"stubModules":["text"],"shim":{},"bundles":{"app-bundle":["app","environment","main","resources/index","resources/elements/question"]}})}
+function _aureliaConfigureModuleLoader(){requirejs.config({"baseUrl":"src/","paths":{"aurelia-binding":"../node_modules\\aurelia-binding\\dist\\amd\\aurelia-binding","aurelia-dependency-injection":"../node_modules\\aurelia-dependency-injection\\dist\\amd\\aurelia-dependency-injection","aurelia-bootstrapper":"../node_modules\\aurelia-bootstrapper\\dist\\amd\\aurelia-bootstrapper","aurelia-framework":"../node_modules\\aurelia-framework\\dist\\amd\\aurelia-framework","aurelia-event-aggregator":"../node_modules\\aurelia-event-aggregator\\dist\\amd\\aurelia-event-aggregator","aurelia-history":"../node_modules\\aurelia-history\\dist\\amd\\aurelia-history","aurelia-history-browser":"../node_modules\\aurelia-history-browser\\dist\\amd\\aurelia-history-browser","aurelia-loader":"../node_modules\\aurelia-loader\\dist\\amd\\aurelia-loader","aurelia-loader-default":"../node_modules\\aurelia-loader-default\\dist\\amd\\aurelia-loader-default","aurelia-logging":"../node_modules\\aurelia-logging\\dist\\amd\\aurelia-logging","aurelia-logging-console":"../node_modules\\aurelia-logging-console\\dist\\amd\\aurelia-logging-console","aurelia-metadata":"../node_modules\\aurelia-metadata\\dist\\amd\\aurelia-metadata","aurelia-pal":"../node_modules\\aurelia-pal\\dist\\amd\\aurelia-pal","aurelia-pal-browser":"../node_modules\\aurelia-pal-browser\\dist\\amd\\aurelia-pal-browser","aurelia-path":"../node_modules\\aurelia-path\\dist\\amd\\aurelia-path","aurelia-polyfills":"../node_modules\\aurelia-polyfills\\dist\\amd\\aurelia-polyfills","aurelia-route-recognizer":"../node_modules\\aurelia-route-recognizer\\dist\\amd\\aurelia-route-recognizer","aurelia-task-queue":"../node_modules\\aurelia-task-queue\\dist\\amd\\aurelia-task-queue","aurelia-router":"../node_modules\\aurelia-router\\dist\\amd\\aurelia-router","aurelia-templating":"../node_modules\\aurelia-templating\\dist\\amd\\aurelia-templating","aurelia-templating-binding":"../node_modules\\aurelia-templating-binding\\dist\\amd\\aurelia-templating-binding","aurelia-fetch-client":"../node_modules\\aurelia-fetch-client\\dist\\amd\\aurelia-fetch-client","text":"../node_modules\\text\\text","app-bundle":"../scripts/app-bundle"},"packages":[{"name":"aurelia-templating-resources","location":"../node_modules/aurelia-templating-resources/dist/amd","main":"aurelia-templating-resources"},{"name":"aurelia-templating-router","location":"../node_modules/aurelia-templating-router/dist/amd","main":"aurelia-templating-router"},{"name":"aurelia-testing","location":"../node_modules/aurelia-testing/dist/amd","main":"aurelia-testing"}],"stubModules":["text"],"shim":{},"bundles":{"app-bundle":["app","environment","main","resources/index","resources/elements/question-list","resources/elements/question"]}})}

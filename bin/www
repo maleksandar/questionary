@@ -38,7 +38,6 @@ models.sequelize.sync({force: true})
     console.log('Server failed to start due to error: %s', err);
   });
 
-
 /**
  * Normalize a port into a number, string, or false.
  */

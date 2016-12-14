@@ -1,7 +1,4 @@
-<template>
-  <h1>Questions:</h1>
-  <li repeat.for="question of questions">
-    <h1>${question.headline}</h1>
-    <p>${question.text}</p>
-  </li>
+<template bindable="content">
+    <h1>${content.headline}</h1>
+    <p>${content.text}</p>
 </template>

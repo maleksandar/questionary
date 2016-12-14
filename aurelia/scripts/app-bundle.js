@@ -28,7 +28,7 @@ define('environment',["exports"], function (exports) {
     testing: true
   };
 });
-define('main',['exports', './environment'], function (exports, _environment) {
+define('main',['exports', './environment', 'aurelia-fetch-client'], function (exports, _environment, _aureliaFetchClient) {
   'use strict';
 
   Object.defineProperty(exports, "__esModule", {
@@ -62,9 +62,37 @@ define('main',['exports', './environment'], function (exports, _environment) {
       aurelia.use.plugin('aurelia-testing');
     }
 
+    configureContainer(aurelia.container);
+
     aurelia.start().then(function () {
       return aurelia.setRoot();
     });
+  }
+
+  function configureContainer(container) {
+    var http = new _aureliaFetchClient.HttpClient();
+    http.configure(function (config) {
+      config.useStandardConfiguration().withBaseUrl('api/').withDefaults({
+        credentials: 'same-origin',
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'Fetch'
+        }
+      });
+      if (_environment2.default.debug) {
+        config.withInterceptor({
+          request: function request(_request) {
+            console.log('Requesting ' + _request.method + ' ' + _request.url);
+            return _request;
+          },
+          response: function response(_response) {
+            console.log('Received ' + _response.status + ' ' + _response.url);
+            return _response;
+          }
+        });
+      }
+    });
+    container.registerInstance(_aureliaFetchClient.HttpClient, http);
   }
 });
 define('resources/index',["exports"], function (exports) {
@@ -76,13 +104,13 @@ define('resources/index',["exports"], function (exports) {
   exports.configure = configure;
   function configure(config) {}
 });
-define('resources/elements/question',['exports', 'aurelia-framework', 'aurelia-http-client'], function (exports, _aureliaFramework, _aureliaHttpClient) {
+define('resources/elements/question-list',['exports', 'aurelia-framework', 'aurelia-fetch-client'], function (exports, _aureliaFramework, _aureliaFetchClient) {
   'use strict';
 
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.Question = undefined;
+  exports.QuestionList = undefined;
 
   function _initDefineProp(target, property, descriptor, context) {
     if (!descriptor) return;
@@ -133,33 +161,34 @@ define('resources/elements/question',['exports', 'aurelia-framework', 'aurelia-h
     throw new Error('Decorating class property failed. Please ensure that transform-class-properties is enabled.');
   }
 
-  var _desc, _value, _class, _descriptor;
+  var _dec, _class, _desc, _value, _class2, _descriptor;
 
-  var client = new _aureliaHttpClient.HttpClient();
-  var Question = exports.Question = (_class = function () {
-    function Question() {
+  var QuestionList = exports.QuestionList = (_dec = (0, _aureliaFramework.inject)(_aureliaFetchClient.HttpClient), _dec(_class = (_class2 = function () {
+    function QuestionList(httpClient) {
       var _this = this;
 
-      _classCallCheck(this, Question);
+      _classCallCheck(this, QuestionList);
 
       _initDefineProp(this, 'value', _descriptor, this);
 
-      this.questions = [];
-      client.get('http://localhost:3000/api/questions').then(function (questions) {
-        console.log('response: ', questions.response);
+      this.httpClient = httpClient;
 
-        _this.questions = JSON.parse(questions.response);
+      this.httpClient.fetch('questions').then(function (response) {
+        return response.json();
+      }).then(function (questions) {
+        return _this.questions = questions;
       });
     }
 
-    Question.prototype.valueChanged = function valueChanged(newValue, oldValue) {};
+    QuestionList.prototype.valueChanged = function valueChanged(newValue, oldValue) {};
 
-    return Question;
-  }(), (_descriptor = _applyDecoratedDescriptor(_class.prototype, 'value', [_aureliaFramework.bindable], {
+    return QuestionList;
+  }(), (_descriptor = _applyDecoratedDescriptor(_class2.prototype, 'value', [_aureliaFramework.bindable], {
     enumerable: true,
     initializer: null
-  })), _class);
+  })), _class2)) || _class);
 });
-define('text!app.html', ['module'], function(module) { module.exports = "<template>\n  <require from=\"./resources/elements/question\"></require>\n\n  <h1>${message}</h1>\n  <question></question>\n\n</template>\n"; });
-define('text!resources/elements/question.html', ['module'], function(module) { module.exports = "<template>\n  <h1>Questions:</h1>\n  <li repeat.for=\"question of questions\">\n    <h1>${question.headline}</h1>\n    <p>${question.text}</p>\n  </li>\n</template>"; });
+define('text!app.html', ['module'], function(module) { module.exports = "<template>\n  <require from=\"./resources/elements/question-list\"></require>\n\n  <h1>${message}</h1>\n  <question-list></question-list>\n\n</template>\n"; });
+define('text!resources/elements/question-list.html', ['module'], function(module) { module.exports = "<template>\n  <require from=\"./question.html\"></require>\n  <h1>QUESTIONS:</h1>\n  <li repeat.for=\"question of questions\">\n    <question content.bind=\"question\"></question>\n  </li>\n</template>"; });
+define('text!resources/elements/question.html', ['module'], function(module) { module.exports = "<template bindable=\"content\">\n    <h1>${content.headline}</h1>\n    <p>${content.text}</p>\n</template>"; });
 //# sourceMappingURL=app-bundle.js.map
