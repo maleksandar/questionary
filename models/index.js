@@ -1,8 +1,10 @@
+var config = require('../config');
+
 var       fs        = require('fs')
         , path      = require('path')
         , Sequelize = require('sequelize')
         , lodash    = require('lodash')
-        , sequelize = new Sequelize('postgres://dev:123456@localhost:5432/node_dev')
+        , sequelize = new Sequelize(config.databaseConnectionString)
         , db        = {};
 
       fs.readdirSync(__dirname)
