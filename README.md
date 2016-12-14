@@ -14,7 +14,7 @@ Questionary is a faculty project created for learning purposes. It's a platform 
 2. Execute `npm install` in the root directory of the repo.
 3. cd to aurelia folder and also execute `npm install` here for installing all the client dependencies.
 4. cd to root folder and execute `npm start`.
-
+---
 If you wish to only build client you can do that in aurelia folder using these commands:
 
 * `au build` -builds client in debug mode with logging turned on.
