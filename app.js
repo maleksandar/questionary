@@ -23,6 +23,7 @@ app.get('/', function (req, res) {
 });
 
 app.use('/api/users', require('./api/user'));
+app.use('/api/questions', require('./api/question'));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
