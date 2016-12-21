@@ -1,9 +1,12 @@
 'use strict';
 
-var User = require('../../models').User;
-var config = require ('../../config');
+var User = require('../models').User;
+var config = require ('../config');
 var jwt = require('jsonwebtoken');
-var exporter = {};
+var Router = require('express').Router;
+var auth = require('../auth/auth.service');
+
+var router = new Router();
 
 function validationError(res, statusCode) {
   statusCode = statusCode || 422;
@@ -23,7 +26,7 @@ function handleError(res, statusCode) {
  * Get list of users
  * restriction: 'admin'
  */
-exporter.index = function(req, res) {
+router.get('/', auth.hasRole('admin'), function(req, res) {
   return User.findAll({
     attributes: [
       '_id',
@@ -36,12 +39,12 @@ exporter.index = function(req, res) {
       res.status(200).json(users);
     })
     .catch(handleError(res));
-};
+});
 
 /**
  * Creates a new user
  */
-exporter.create = function(req, res) {
+router.post('/', function(req, res) {
   var newUser = User.build(req.body);
   newUser.setDataValue('role', 'user');
   return newUser.save()
@@ -52,12 +55,12 @@ exporter.create = function(req, res) {
       res.json({ token });
     })
     .catch(validationError(res));
-};
+});
 
 /**
  * Get a single user
  */
-exporter.show = function(req, res, next) {
+router.get('/:id', auth.isAuthenticated(), function(req, res, next) {
   var userId = req.params.id;
 
   return User.find({
@@ -72,24 +75,24 @@ exporter.show = function(req, res, next) {
       res.json(user.profile);
     })
     .catch(err => next(err));
-};
+});
 
 /**
  * Deletes a user
  * restriction: 'admin'
  */
-exporter.destroy = function(req, res) {
+router.delete('/:id', auth.hasRole('admin'), function(req, res) {
   return User.destroy({ where: { _id: req.params.id } })
     .then(function() {
       res.status(204).end();
     })
     .catch(handleError(res));
-};
+});
 
 /**
  * Change a users password
  */
-exporter.changePassword = function(req, res) {
+router.put('/:id/password', auth.isAuthenticated(), function(req, res) {
   var userId = req.user._id;
   var oldPass = String(req.body.oldPassword);
   var newPass = String(req.body.newPassword);
@@ -111,12 +114,12 @@ exporter.changePassword = function(req, res) {
         return res.status(403).end();
       }
     });
-};
+});
 
 /**
  * Get my info
  */
-exporter.me = function(req, res, next) {
+router.get('/me', auth.isAuthenticated(), function(req, res, next) {
   var userId = req.user._id;
 
   return User.find({
@@ -137,13 +140,6 @@ exporter.me = function(req, res, next) {
       res.json(user);
     })
     .catch(err => next(err));
-};
+});
 
-/**
- * Authentication callback
- */
-exporter.authCallback = function(req, res) {
-  res.redirect('/');
-};
-
-module.exports = exporter;
+module.exports = router;

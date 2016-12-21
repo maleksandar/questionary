@@ -1,8 +1,11 @@
 'use strict';
 
-var Question = require('../../models').Question;
-var config = require ('../../config');
-var exporter = {};
+var Question = require('../models').Question;
+var config = require ('../config');
+var Router = require('express').Router;
+var auth = require('../auth/auth.service');
+
+var router = new Router();
 
 function validationError(res, statusCode) {
   statusCode = statusCode || 422;
@@ -18,7 +21,7 @@ function handleError(res, statusCode) {
   };
 }
 
-exporter.index = function(req, res) {
+router.get('/', function(req, res) {
   return Question.findAll({
     attributes: [
       '_id',
@@ -33,20 +36,16 @@ exporter.index = function(req, res) {
       res.status(200).json(questions);
     })
     .catch(handleError(res));
-};
+});
 
-exporter.create = function(req, res) {
+router.post('/', auth.isAuthenticated(), function(req, res) {
   var newQuestion = Question.build(req.body);
-//   newQuestion.setDataValue('role', 'user');
+  newQuestion.createdByUserId = req.user._id;
   return newQuestion.save()
     .then(function(question) {
-    //   var token = jwt.sign({ _id: user._id }, config.secrets.session, {
-    //     expiresIn: 60 * 60 * 5
-    //   });
-    //   res.json({ token });
         res.json(question);
     })
     .catch(validationError(res));
-};
+});
 
-module.exports = exporter;
+module.exports = router;

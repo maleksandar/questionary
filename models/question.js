@@ -26,9 +26,11 @@ module.exports = function(sequelize, DataTypes) {
         },
         positiveVotes: {
             type: DataTypes.INTEGER,
+            defaultValue: 0
         },
         negativeVotes: {
             type: DataTypes.INTEGER,
+            defaultValue: 0
         }    
     },
     {
