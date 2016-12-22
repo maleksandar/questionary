@@ -7,8 +7,6 @@ var bodyParser = require('body-parser');
 
 var app = express();
 
-// uncomment after placing your favicon in /public
-//app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -23,6 +21,7 @@ app.get('/', function (req, res) {
 
 app.use('/api/users', require('./controllers/user'));
 app.use('/api/questions', require('./controllers/question'));
+app.use('/api/answers', require('./controllers/answer'));
 app.use('/api/auth', require('./auth/local'));
 
 // catch 404 and forward to error handler

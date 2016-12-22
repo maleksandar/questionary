@@ -2,7 +2,8 @@
 
 var express = require('express');
 var passport = require('passport');
-var signToken = require('../auth.service').signToken;
+var authService = require('../auth.service');
+var signToken = authService.signToken;
 var User = require('../../models').User;
 
 require('./passport').setup(User);
@@ -20,8 +21,15 @@ router.post('/login', function(req, res, next) {
     }
 
     var token = signToken(user._id, user.role);
-    res.json({ token });
+    // TODO: add Secure; for prod!
+    res.cookie('access_token', token, { httpOnly: true /*, secure: true */});
+    res.json({ access_token: token });
   })(req, res, next);
+});
+
+router.post('/logout', authService.isAuthenticated(), function(req, res, next) {
+    res.cookie('access_token', 'LOGED_OUT', { httpOnly: true /*, secure: true */});
+    res.end();
 });
 
 module.exports = router;

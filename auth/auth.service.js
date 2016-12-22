@@ -24,7 +24,7 @@ exporter.isAuthenticated = function() {
       }
      // IE11 forgets to set Authorization header sometimes. Pull from cookie instead.
       if(req.query && typeof req.headers.authorization === 'undefined') {
-        req.headers.authorization = `Bearer ${req.cookies.token}`;
+        req.headers.authorization = `Bearer ${req.cookies.access_token}`;
       }
       validateJwt(req, res, next);
     })
@@ -70,7 +70,7 @@ exporter.hasRole = function(roleRequired) {
  */
 exporter.signToken = function(id, role) {
   return jwt.sign({ _id: id, role }, config.secrets.session, {
-    expiresIn: 60 * 60 * 5
+    expiresIn: 60 * 60 * 2
   });
 };
 

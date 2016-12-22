@@ -1,9 +1,5 @@
 'use strict';
-var classMethods = {
-    associate: function(models) {
-        Question.belongsTo(models.User);
-    }
-};
+
 module.exports = function(sequelize, DataTypes) {
     var Question = sequelize.define('Question', {
         _id: {

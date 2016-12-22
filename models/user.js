@@ -34,9 +34,7 @@ module.exports = function(sequelize, DataTypes) {
         notEmpty: true
       }
     },
-    provider: DataTypes.STRING,
     salt: DataTypes.STRING
-
   }, 
   {
     /**
