@@ -21,3 +21,5 @@ If you wish to only build client you can do that in aurelia folder using these c
 * `au build --env prod` -builds cliend in production mode with logging turned off.
   * *It creates two bundle files in the `aurelia/scripts` folder*
 * `au run` -runs the app in debug mode.
+
+Ovo je neka promena za testiranje.
