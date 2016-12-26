@@ -15,7 +15,8 @@
     "bootstrap": "^3.3.7",
     "jquery": "^2.2.4",
     "requirejs": "^2.3.2",
-    "text": "github:requirejs/text#latest"
+    "text": "github:requirejs/text#latest",
+    "toastr": "^2.1.2"
   },
   "peerDependencies": {},
   "devDependencies": {
