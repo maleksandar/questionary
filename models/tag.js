@@ -17,16 +17,11 @@ module.exports = function (sequelize, DataTypes) {
         timestamps: false,
         classMethods: {
             associate: function (models) {
-                /* 
-                 * Ready for usage in later development
-                 * 
                 Tag.belongsToMany(models.Question, { 
-                    through: models.TagQuestion,
+                    through: "TagQuestion",
                     onDelete: "CASCADE",
                     foreignKey: "tagId"
                 });
-                //through is required
-                */
             }
         }
      });
