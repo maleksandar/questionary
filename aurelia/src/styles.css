@@ -88,15 +88,9 @@ pre#question-text {
 }
 
 #question-tags {
-    background: white;
+    background-color: white;
     padding-bottom: 10px;
     text-align: left;
-}
-
-.question-tag {
-   color: dodgerblue; 
-   border-radius: 2px;
-   padding: 0px 5px 0px 5px;
 }
 
 .question-user {
@@ -112,8 +106,10 @@ pre#question-text {
 
 .votes-plus {
     color: seagreen;
+    background-color: #DFF0D8;
 }
 
 .votes-minus {
     color: darkred; 
+    background-color: #F2DEDE;
 }
