@@ -32,6 +32,7 @@ function startServer() {
   server.on('listening', onListening);
 }
 
+// {force: true} means to force re-create tables every time the app starts.
 models.sequelize.sync({force: true})
   .then(startServer)
   .catch(function(err) {

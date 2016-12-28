@@ -1,29 +1,21 @@
-import {inject} from 'aurelia-framework';
 import {Auth} from './services/auth';
-import {SharedResources} from './config/sharedResources';
+import {inject} from 'aurelia-framework';
 
-@inject(Auth, SharedResources)
+@inject(Auth)
 export class App {
+  constructor(auth) {
+    this.auth = auth;
+  }
 
   configureRouter(config, router){
-    config.title = 'Contacts';
+    config.title = 'Questionary';
     config.map([
       { route: '',              moduleId: 'pages/questions',   title: 'Questions' },
+      { route: 'home',              moduleId: 'pages/home',   title: 'Home', nav: false },
       { route: 'login',  moduleId: 'pages/login', name: 'login', title: 'Log in' },
       { route: 'logout',  moduleId: 'pages/logout', name: 'logout', title: 'Log out' },
       { route: 'signup', moduleId: 'pages/signup', name: 'signup', title: 'Sign up' }
     ]);
     this.router = router;
-  }
-  constructor(auth, sharedResources) {
-    this.auth = auth;
-    this.navbarElements = [
-      { title: 'Home', href: '#', icon: 'fa fa-home' },
-      { title: 'Questions', href: '#' },
-      { title: 'About', href: '#' }
-      // { title: 'Sign Up', href: '#/signup' },
-      // { title: 'Log In', href: '#/login '}
-    ];
-    this.currentUser = sharedResources.currentUser;
   }
 }

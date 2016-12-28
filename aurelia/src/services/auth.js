@@ -1,11 +1,11 @@
-import {bindable, inject} from 'aurelia-framework';
+import {inject} from 'aurelia-framework';
 import {HttpClient, json} from 'aurelia-fetch-client';
 
 @inject(HttpClient)
 export class Auth {
   constructor(httpClient) {
     this.httpClient = httpClient;
-    this.isLogedIn = false;
+    this.isLogedIn = sessionStorage.getItem("logedIn") === "true" ? true : false;
   }
 
   login(email, password) {
@@ -13,16 +13,21 @@ export class Auth {
       method: 'post',
       body: json({ email: email, password: password })
     })
-      .then(response => {
-        this.isLogedIn = true;
-        return response.json();
-      });
-      
+    .then(response => {
+      // sessionStorage can only save strings not bools.
+      sessionStorage.setItem('logedIn', "true");
+      this.isLogedIn = true;
+      return response.json();
+    });
   }
 
   logout() {
     return this.httpClient.fetch('auth/logout', {
       method: 'post'
-    }).then(response => { this.isLogedIn = false })
+    })
+    .then(response => { 
+      sessionStorage.setItem('logedIn', "false");
+      this.isLogedIn = false;
+    });
   }
 }

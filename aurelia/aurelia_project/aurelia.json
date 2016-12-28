@@ -116,6 +116,15 @@
           "aurelia-templating",
           "aurelia-templating-binding",
           "aurelia-fetch-client",
+          {
+            "name": "toastr",
+            "path": "../node_modules/toastr",
+            "main": "toastr",
+            "resources": [
+              "build/toastr.min.css"
+            ],
+            "deps": ["jquery"]
+          },
           "text",
           "jquery",
           {
