@@ -1,4 +1,47 @@
 <template bindable="content">
-    <h1>${content.headline}</h1>
-    <p>${content.text}</p>
+    <require from="bootstrap/css/bootstrap.min.css"></require>
+    <require from="../../styles.css"></require>
+    <div class="container question">
+            <!-- Headline -->
+            <div class="row">
+                <div id="question-headline" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">${content.headline}</div>
+            </div>
+            <!-- Answers -->
+            <div class="row">
+                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 question-answers">Answers: Broj odgovora</div>
+            </div>
+            <!-- Text -->
+            <div class="row question-text">
+                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                    <div class="row">
+                        <pre id="question-text">${content.text}</pre>
+                    </div>
+                </div>
+            </div>
+            <!-- Tags -->
+            <div class="row">
+                <div id="question-tags" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                    <span class="bg-info question-tag">#java</span>
+                    <span class="bg-info question-tag">#thread</span>
+                    <span class="bg-info question-tag">#exeption</span>
+                    <span class="bg-info question-tag">#nekiTag</span>
+                </div>
+            </div>
+            <!-- Votes -->
+            <div class="row"></div>
+                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 bg-success votes-plus">
+                    <!-- <span class="glyphicon glyphicon-thumbs-up"></span> -->
+                    ${content.positiveVotes} 
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 bg-danger votes-minus">
+                    ${content.negativeVotes} 
+                    <!-- <span class="glyphicon glyphicon-thumbs-down"></span> -->
+                </div>
+            </div>
+            <!-- Username and Domain -->
+            <div class="row">
+                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 question-user">Username</div>
+                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 question-domain">Domain</div>
+            </div>
+     </div>
 </template>

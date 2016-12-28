@@ -1,7 +1,7 @@
 <template>
   <require from="./question.html"></require>
   <h1>QUESTIONS:</h1>
-  <li repeat.for="question of questions">
+  <div class="content" repeat.for="question of questions">
     <question content.bind="question"></question>
-  </li>
+  </div>
 </template>
