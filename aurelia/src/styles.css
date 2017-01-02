@@ -50,18 +50,16 @@ li.list-group-item.active > a {
 }
 
 .question {
-    color: #9D9D9D;
-    background-color: #222222;
+    background-color: #111111;
     border-radius: 7px;
-    box-shadow: 1px 1px 1px 1px darkslategray;
+    box-shadow: 2px 2px 2px 2px dimgray;
+    color: #9D9D9D;
     text-align: center;
 }
 
-.question:hover {
+.question-clickable:hover {
     color: white;
     cursor: pointer;
-    background-color: darkslategrey;
-    box-shadow: 2px 2px 2px 2px cadetblue;
 }
 
 .question-text {
@@ -83,8 +81,8 @@ pre#question-text {
 }
 
 .question-answers {
-    color: #222222;
-    background-color: #9D9D9D;
+    background-color: #444444;
+    color: #F2DEDE;
 }
 
 #question-tags {
@@ -104,12 +102,34 @@ pre#question-text {
     text-align: right;
 }
 
+.question-trash {
+    background-color: #222222;
+    color: #FF3333;
+}
+
+.question-trash:hover {
+    background-color: #FF3333;
+    color: #222222;
+    cursor: pointer;
+}
+
+.question-pencil {
+    background-color: #222222;
+    color: #FFFF66;
+}
+
+.question-pencil:hover {
+    background-color: #FFFF66;
+    color: #222222;
+    cursor: pointer;
+}
+
 .votes-plus {
-    color: seagreen;
     background-color: #DFF0D8;
+    color: seagreen;
 }
 
 .votes-minus {
-    color: darkred; 
     background-color: #F2DEDE;
+    color: darkred; 
 }

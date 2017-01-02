@@ -1,9 +1,19 @@
-<template bindable="content">
+<template bindable="content,cuser">
     <div class="container question">
             <!-- Headline -->
             <div class="row">
-                <div id="question-headline" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">${content.headline}</div>
+                <div id="question-headline" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 question-clickable">${content.headline}</div>
             </div>
+            <!-- TODO Edit & Delete -->
+            <div if.bind="cuser.isDefined" class="row">
+                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 question-pencil">
+                    <i class="fa fa-pencil" aria-hidden="true"></i>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 question-trash">
+                    <i class="fa fa-trash" aria-hidden="true"></i>
+                </div>
+            </div> 
+
             <!-- Answers -->
             <div class="row">
                 <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 question-answers">Answers: Broj odgovora</div>
@@ -38,8 +48,12 @@
             </div>
             <!-- Username and Domain -->
             <div class="row">
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 question-user"><i class="fa fa-user-circle-o"></i>&nbsp;${content.createdByUserId}</div>
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 question-domain">Domain</div>
+                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 question-user">
+                    <span class="question-clickable"><i class="fa fa-user-circle-o"></i>&nbsp;${content.createdByUserId}</span>
+                </div>
+                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 question-domain">
+                    <span class="question-clickable">Domain</span>
+                </div>
             </div>
      </div>
 </template>
