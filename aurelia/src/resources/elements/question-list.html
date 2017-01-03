@@ -2,6 +2,6 @@
   <require from="./question.html"></require>
   <h1>QUESTIONS:</h1>
   <div class="content" repeat.for="question of questions">
-    <question content.bind="question" cuser.bind="currentUser"></question>
+    <question content.bind="question" cuser.bind="sharedResources"></question>
   </div>
 </template>

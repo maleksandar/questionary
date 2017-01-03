@@ -126,11 +126,14 @@ define('config/sharedResources',["exports"], function (exports) {
 
     this.currentUser = {
       isLogedIn: false,
-      isAdmin: false
+      isAdmin: false,
+      id: -1,
+      name: "",
+      email: ""
     };
   };
 });
-define('pages/home',['exports', '../services/auth', 'aurelia-framework'], function (exports, _auth, _aureliaFramework) {
+define('pages/home',['exports', '../services/auth', 'aurelia-framework', '../config/sharedResources'], function (exports, _auth, _aureliaFramework, _sharedResources) {
   'use strict';
 
   Object.defineProperty(exports, "__esModule", {
@@ -146,11 +149,12 @@ define('pages/home',['exports', '../services/auth', 'aurelia-framework'], functi
 
   var _dec, _class;
 
-  var Home = exports.Home = (_dec = (0, _aureliaFramework.inject)(_auth.Auth), _dec(_class = function () {
-    function Home(auth) {
+  var Home = exports.Home = (_dec = (0, _aureliaFramework.inject)(_auth.Auth, _sharedResources.SharedResources), _dec(_class = function () {
+    function Home(auth, sharedResources) {
       _classCallCheck(this, Home);
 
       this.auth = auth;
+      this.sharedResources = sharedResources;
     }
 
     Home.prototype.canActivate = function canActivate() {
@@ -160,7 +164,7 @@ define('pages/home',['exports', '../services/auth', 'aurelia-framework'], functi
     return Home;
   }()) || _class);
 });
-define('pages/login',['exports', 'aurelia-framework', 'aurelia-router', '../services/auth'], function (exports, _aureliaFramework, _aureliaRouter, _auth) {
+define('pages/login',['exports', 'aurelia-framework', 'aurelia-router', 'aurelia-fetch-client', '../config/sharedResources', '../services/auth'], function (exports, _aureliaFramework, _aureliaRouter, _aureliaFetchClient, _sharedResources, _auth) {
   'use strict';
 
   Object.defineProperty(exports, "__esModule", {
@@ -176,12 +180,14 @@ define('pages/login',['exports', 'aurelia-framework', 'aurelia-router', '../serv
 
   var _dec, _class;
 
-  var Login = exports.Login = (_dec = (0, _aureliaFramework.inject)(_auth.Auth, _aureliaRouter.Router), _dec(_class = function () {
-    function Login(auth, router) {
+  var Login = exports.Login = (_dec = (0, _aureliaFramework.inject)(_auth.Auth, _aureliaRouter.Router, _aureliaFetchClient.HttpClient, _sharedResources.SharedResources), _dec(_class = function () {
+    function Login(auth, router, httpClient, sharedResources) {
       _classCallCheck(this, Login);
 
       this.auth = auth;
       this.router = router;
+      this.httpClient = httpClient;
+      this.sharedResources = sharedResources;
     }
 
     Login.prototype.login = function login() {
@@ -191,13 +197,25 @@ define('pages/login',['exports', 'aurelia-framework', 'aurelia-router', '../serv
         _this.router.navigate("");
       }).catch(function () {
         return _this.loginError = true;
+      }).then(function () {
+        if (!_this.loginError) {
+          _this.httpClient.fetch('users/me').then(function (response) {
+            return response.json();
+          }).then(function (user) {
+            _this.sharedResources.isLogedIn = true;
+            _this.sharedResources.isAdmin = user.role == "admin";
+            _this.sharedResources.id = user._id;
+            _this.sharedResources.name = user.name;
+            _this.sharedResources.email = user.email;
+          });
+        }
       });
     };
 
     return Login;
   }()) || _class);
 });
-define('pages/logout',['exports', 'aurelia-framework', 'aurelia-router', '../services/auth'], function (exports, _aureliaFramework, _aureliaRouter, _auth) {
+define('pages/logout',['exports', 'aurelia-framework', 'aurelia-router', '../config/sharedResources', '../services/auth'], function (exports, _aureliaFramework, _aureliaRouter, _sharedResources, _auth) {
   'use strict';
 
   Object.defineProperty(exports, "__esModule", {
@@ -213,25 +231,33 @@ define('pages/logout',['exports', 'aurelia-framework', 'aurelia-router', '../ser
 
   var _dec, _class;
 
-  var Logout = exports.Logout = (_dec = (0, _aureliaFramework.inject)(_aureliaRouter.Router, _auth.Auth), _dec(_class = function Logout(router, auth) {
+  var Logout = exports.Logout = (_dec = (0, _aureliaFramework.inject)(_aureliaRouter.Router, _auth.Auth, _sharedResources.SharedResources), _dec(_class = function Logout(router, auth, sharedResources) {
     var _this = this;
 
     _classCallCheck(this, Logout);
 
     this.auth = auth;
     this.router = router;
+    this.sharedResources = sharedResources;
 
     this.auth.logout().then(function () {
-      return _this.router.navigate("");
+      _this.router.navigate("");
+      _this.sharedResources.isLogedIn = false;
+      _this.sharedResources.isAdmin = false;
+      _this.sharedResources.id = -1;
+      _this.sharedResources.name = "";
+      _this.sharedResources.email = "";
+      _this.sharedResources.role = "";
     });
   }) || _class);
 });
-define('pages/questions',["exports"], function (exports) {
-  "use strict";
+define('pages/questions',['exports', 'aurelia-framework', '../config/sharedResources'], function (exports, _aureliaFramework, _sharedResources) {
+  'use strict';
 
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
+  exports.Questions = undefined;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -239,11 +265,14 @@ define('pages/questions',["exports"], function (exports) {
     }
   }
 
-  var Questions = exports.Questions = function Questions() {
+  var _dec, _class;
+
+  var Questions = exports.Questions = (_dec = (0, _aureliaFramework.inject)(_sharedResources.SharedResources), _dec(_class = function Questions(sharedResources) {
     _classCallCheck(this, Questions);
 
     this.message = "hello";
-  };
+    this.sharedResources = sharedResources;
+  }) || _class);
 });
 define('pages/signup',['exports', 'aurelia-framework', 'aurelia-fetch-client', 'aurelia-router'], function (exports, _aureliaFramework, _aureliaFetchClient, _aureliaRouter) {
   'use strict';
@@ -387,7 +416,7 @@ define('resources/elements/question-form',['exports', 'aurelia-fetch-client', 'a
     return QuestionForm;
   }()) || _class);
 });
-define('resources/elements/question-list',['exports', 'aurelia-framework', 'aurelia-fetch-client'], function (exports, _aureliaFramework, _aureliaFetchClient) {
+define('resources/elements/question-list',['exports', 'aurelia-framework', 'aurelia-fetch-client', '../../config/sharedResources'], function (exports, _aureliaFramework, _aureliaFetchClient, _sharedResources) {
   'use strict';
 
   Object.defineProperty(exports, "__esModule", {
@@ -446,29 +475,21 @@ define('resources/elements/question-list',['exports', 'aurelia-framework', 'aure
 
   var _dec, _class, _desc, _value, _class2, _descriptor;
 
-  var QuestionList = exports.QuestionList = (_dec = (0, _aureliaFramework.inject)(_aureliaFetchClient.HttpClient), _dec(_class = (_class2 = function () {
-    function QuestionList(httpClient) {
+  var QuestionList = exports.QuestionList = (_dec = (0, _aureliaFramework.inject)(_aureliaFetchClient.HttpClient, _sharedResources.SharedResources), _dec(_class = (_class2 = function () {
+    function QuestionList(httpClient, sharedResources) {
       var _this = this;
 
       _classCallCheck(this, QuestionList);
 
       _initDefineProp(this, 'value', _descriptor, this);
 
-      this.currentUser = { isDefined: false };
       this.httpClient = httpClient;
+      this.sharedResources = sharedResources;
 
       this.httpClient.fetch('questions').then(function (response) {
         return response.json();
       }).then(function (questions) {
         return _this.questions = questions;
-      });
-
-      this.httpClient.fetch('users/me').then(function (response) {
-        return response.json();
-      }).then(function (user) {
-        _this.currentUser.id = user._id;
-        _this.currentUser.name = user.name;
-        _this.currentUser.isDefined = true;
       });
     }
 
@@ -489,6 +510,6 @@ define('text!pages/questions.html', ['module'], function(module) { module.export
 define('text!pages/signup.html', ['module'], function(module) { module.exports = "<template>\r\n  <div class=\"row\"><h3 class=\"col-sm-offset-4 col-sm-8\">Sign up with your credentials</h3></div>\r\n  <form class=\"form-horizontal\" role=\"form\" submit.delegate = \"signup()\">\r\n    <div class=\"form-group\">\r\n      <label class=\"control-label col-sm-4\" for=\"name\">Full name:</label>\r\n      <div class=\"col-sm-8\">\r\n        <input value.bind=\"name\" type=\"text\" class=\"form-control\" id=\"name\" placeholder=\"Enter your full name\">\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">\r\n      <label class=\"control-label col-sm-4\" for=\"email\">Email:</label>\r\n      <div class=\"col-sm-8\">\r\n        <input value.bind=\"email\" type=\"email\" class=\"form-control\" id=\"email\" placeholder=\"Enter your email\">\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">\r\n      <label class=\"control-label col-sm-4\" for=\"pwd\">Password:</label>\r\n      <div class=\"col-sm-8\">          \r\n        <input value.bind=\"password\" type=\"password\" class=\"form-control\" id=\"pwd\" placeholder=\"Enter password\">\r\n      </div>\r\n    </div> \r\n    <div class=\"form-group\">        \r\n      <div class=\"col-sm-offset-4 col-sm-8\">\r\n        <button type=\"submit\" class=\"btn btn-default\">Sign up</button>\r\n      </div>\r\n    </div>\r\n  </form>\r\n</template>"; });
 define('text!resources/elements/navigation-element.html', ['module'], function(module) { module.exports = "<template bindable=\"href, title, icon\">\r\n      <a class=\"navbar-brand\" href=\"${href}\">\r\n        <i class=\"${icon}\"></i>\r\n        <span>${title}</span>\r\n      </a>\r\n</template>"; });
 define('text!resources/elements/question-form.html', ['module'], function(module) { module.exports = "<template>\r\n  <require from=\"toastr/build/toastr.min.css\"></require>\r\n  <div class=\"row\"><h3 class=\"col-sm-offset-4 col-sm-8\">Ask your question</h3></div>\r\n  <form class=\"form-horizontal\" role=\"form\" submit.delegate = \"postQuestion()\">\r\n    <div class=\"form-group\">\r\n      <label class=\"control-label col-sm-4\" for=\"email\">Headline:</label>\r\n      <div class=\"col-sm-8\">\r\n        <input value.bind=\"headline\" type=\"text\" class=\"form-control\" name=\"headline\" placeholder=\"Enter the headline of your question\">\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">\r\n      <label class=\"control-label col-sm-4\" for=\"pwd\">Text:</label>\r\n      <div class=\"col-sm-8\">      \r\n        <textarea value.bind=\"text\" class=\"form-control\" rows=\"7\" name=\"text\" placeholder=\"Enter the text of your question\"></textarea>\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">        \r\n      <div show.bind=\"serverError\" class=\"col-sm-offset-4 col-sm-8 alert alert-danger\">\r\n        <p><i class=\"fa fa-exclamation\" aria-hidden=\"true\"></i> <strong> Error: </strong> Some kind of a server error! </p>\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">        \r\n      <div class=\"col-sm-offset-4 col-sm-8\">\r\n        <button type=\"submit\" class=\"btn btn-default\">Post question</button>\r\n      </div>\r\n    </div>\r\n  </form>\r\n</template>"; });
-define('text!resources/elements/question-list.html', ['module'], function(module) { module.exports = "<template>\r\n  <require from=\"./question.html\"></require>\r\n  <h1>QUESTIONS:</h1>\r\n  <div class=\"content\" repeat.for=\"question of questions\">\r\n    <question content.bind=\"question\" cuser.bind=\"currentUser\"></question>\r\n  </div>\r\n</template>"; });
-define('text!resources/elements/question.html', ['module'], function(module) { module.exports = "<template bindable=\"content,cuser\">\r\n    <div class=\"container question\">\r\n            <!-- Headline -->\r\n            <div class=\"row\">\r\n                <div id=\"question-headline\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12 question-clickable\">${content.headline}</div>\r\n            </div>\r\n            <!-- TODO Edit & Delete -->\r\n            <div if.bind=\"cuser.isDefined\" class=\"row\">\r\n                <div class=\"col-lg-6 col-md-6 col-sm-6 col-xs-6 question-pencil\">\r\n                    <i class=\"fa fa-pencil\" aria-hidden=\"true\"></i>\r\n                </div>\r\n                <div class=\"col-lg-6 col-md-6 col-sm-6 col-xs-6 question-trash\">\r\n                    <i class=\"fa fa-trash\" aria-hidden=\"true\"></i>\r\n                </div>\r\n            </div> \r\n\r\n            <!-- Answers -->\r\n            <div class=\"row\">\r\n                <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12 question-answers\">Answers: Broj odgovora</div>\r\n            </div>\r\n            <!-- Text -->\r\n            <div class=\"row question-text\">\r\n                <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n                    <div class=\"row\">\r\n                        <pre id=\"question-text\">${content.text}</pre>\r\n                    </div>\r\n                </div>\r\n            </div>\r\n            <!-- Tags -->\r\n            <div class=\"row\">\r\n                <div id=\"question-tags\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n                    <span class=\"tag tag-pill tag-info\">java</span>\r\n                    <span class=\"tag tag-pill tag-info\">thread</span>\r\n                    <span class=\"tag tag-pill tag-info\">exeption</span>\r\n                    <span class=\"tag tag-pill tag-info\">nekiTag</span>\r\n                </div>\r\n            </div>\r\n            <!-- Votes -->\r\n            <div class=\"row\">\r\n                <div class=\"col-lg-6 col-md-6 col-sm-6 col-xs-6 votes-plus\">\r\n                    <span class=\"fa fa-chevron-circle-up\"></span> \r\n                    ${content.positiveVotes} \r\n                </div>\r\n                <div class=\"col-lg-6 col-md-6 col-sm-6 col-xs-6 votes-minus\">\r\n                    ${content.negativeVotes} \r\n                    <span class=\"fa fa-chevron-circle-down\"></span>\r\n                </div>\r\n            </div>\r\n            <!-- Username and Domain -->\r\n            <div class=\"row\">\r\n                <div class=\"col-lg-6 col-md-6 col-sm-6 col-xs-6 question-user\">\r\n                    <span class=\"question-clickable\"><i class=\"fa fa-user-circle-o\"></i>&nbsp;${content.createdByUserId}</span>\r\n                </div>\r\n                <div class=\"col-lg-6 col-md-6 col-sm-6 col-xs-6 question-domain\">\r\n                    <span class=\"question-clickable\">Domain</span>\r\n                </div>\r\n            </div>\r\n     </div>\r\n</template>\r\n"; });
+define('text!resources/elements/question-list.html', ['module'], function(module) { module.exports = "<template>\r\n  <require from=\"./question.html\"></require>\r\n  <h1>QUESTIONS:</h1>\r\n  <div class=\"content\" repeat.for=\"question of questions\">\r\n    <question content.bind=\"question\" cuser.bind=\"sharedResources\"></question>\r\n  </div>\r\n</template>"; });
+define('text!resources/elements/question.html', ['module'], function(module) { module.exports = "<template bindable=\"content,cuser\">\r\n    <div class=\"container question\">\r\n            <!-- Headline -->\r\n            <div class=\"row\">\r\n                <div id=\"question-headline\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12 question-clickable\">${content.headline}</div>\r\n            </div>\r\n            <!-- TODO Edit & Delete -->\r\n            <div if.bind=\"cuser.isLogedIn && content.createdByUserId == cuser.id\" class=\"row\">\r\n                <div class=\"col-lg-6 col-md-6 col-sm-6 col-xs-6 question-pencil\">\r\n                    <i class=\"fa fa-pencil\" aria-hidden=\"true\"></i>\r\n                </div>\r\n                <div class=\"col-lg-6 col-md-6 col-sm-6 col-xs-6 question-trash\">\r\n                    <i class=\"fa fa-trash\" aria-hidden=\"true\"></i>\r\n                </div>\r\n            </div> \r\n\r\n            <!-- Answers -->\r\n            <div class=\"row\">\r\n                <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12 question-answers\">Answers: Broj odgovora</div>\r\n            </div>\r\n            <!-- Text -->\r\n            <div class=\"row question-text\">\r\n                <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n                    <div class=\"row\">\r\n                        <pre id=\"question-text\">${content.text}</pre>\r\n                    </div>\r\n                </div>\r\n            </div>\r\n            <!-- Tags -->\r\n            <div class=\"row\">\r\n                <div id=\"question-tags\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n                    <span class=\"tag tag-pill tag-info\">java</span>\r\n                    <span class=\"tag tag-pill tag-info\">thread</span>\r\n                    <span class=\"tag tag-pill tag-info\">exeption</span>\r\n                    <span class=\"tag tag-pill tag-info\">nekiTag</span>\r\n                </div>\r\n            </div>\r\n            <!-- Votes -->\r\n            <div class=\"row\">\r\n                <div class=\"col-lg-6 col-md-6 col-sm-6 col-xs-6 votes-plus\">\r\n                    <span class=\"fa fa-chevron-circle-up\"></span> \r\n                    ${content.positiveVotes} \r\n                </div>\r\n                <div class=\"col-lg-6 col-md-6 col-sm-6 col-xs-6 votes-minus\">\r\n                    ${content.negativeVotes} \r\n                    <span class=\"fa fa-chevron-circle-down\"></span>\r\n                </div>\r\n            </div>\r\n            <!-- Username and Domain -->\r\n            <div class=\"row\">\r\n                <div class=\"col-lg-6 col-md-6 col-sm-6 col-xs-6 question-user\">\r\n                    <span class=\"question-clickable\"><i class=\"fa fa-user-circle-o\"></i>&nbsp;${content.createdByUserId}</span>\r\n                </div>\r\n                <div class=\"col-lg-6 col-md-6 col-sm-6 col-xs-6 question-domain\">\r\n                    <span class=\"question-clickable\">Domain</span>\r\n                </div>\r\n            </div>\r\n     </div>\r\n</template>\r\n"; });
 //# sourceMappingURL=app-bundle.js.map
