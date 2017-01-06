@@ -5,7 +5,7 @@ export class SharedResources {
       isAdmin: false,
       id: -1,
       name: "",
-      email: "",
-    }
+      email: ""
+    };
   }
 }
