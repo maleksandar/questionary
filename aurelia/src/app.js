@@ -10,11 +10,11 @@ export class App {
   configureRouter(config, router){
     config.title = 'Questionary';
     config.map([
-      { route: '',              moduleId: 'pages/questions',   title: 'Questions' },
-      { route: 'home',              moduleId: 'pages/home',   title: 'Home', nav: false },
-      { route: 'login',  moduleId: 'pages/login', name: 'login', title: 'Log in' },
-      { route: 'logout',  moduleId: 'pages/logout', name: 'logout', title: 'Log out' },
-      { route: 'signup', moduleId: 'pages/signup', name: 'signup', title: 'Sign up' }
+      { route: '',       moduleId: 'pages/questions', title: 'Questions' },
+      { route: 'home',   moduleId: 'pages/home',      title: 'Home', nav: false },
+      { route: 'login',  moduleId: 'pages/login',     name: 'login', title: 'Log in' },
+      { route: 'logout', moduleId: 'pages/logout',    name: 'logout', title: 'Log out' },
+      { route: 'signup', moduleId: 'pages/signup',    name: 'signup', title: 'Sign up' }
     ]);
     this.router = router;
   }

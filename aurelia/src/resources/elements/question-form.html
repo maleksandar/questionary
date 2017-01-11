@@ -1,7 +1,8 @@
 <template>
   <require from="toastr/build/toastr.min.css"></require>
-  <div class="row"><h3 class="col-sm-offset-4 col-sm-8">Ask your question</h3></div>
-  <form class="form-horizontal" role="form" submit.delegate = "postQuestion()">
+  <div class="col-sm-offset-4 col-sm-8"><button class="btn btn-default" data-toggle="collapse" data-target=".questionForm">Ask a Question</button></div>
+  <div class="questionForm collapse row"><h3 class="col-sm-offset-4 col-sm-8">Ask your question</h3></div>
+  <form class="questionForm collapse form-horizontal" role="form" submit.delegate = "postQuestion()">
     <div class="form-group">
       <label class="control-label col-sm-4" for="email">Headline:</label>
       <div class="col-sm-8">
