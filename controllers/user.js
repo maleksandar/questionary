@@ -58,6 +58,32 @@ router.post('/', function(req, res) {
 });
 
 /**
+ * Get my info
+ */
+router.get('/me', auth.isAuthenticated(), function(req, res, next) {
+  var userId = req.user._id;
+
+  return User.find({
+    where: {
+      _id: userId
+    },
+    attributes: [
+      '_id',
+      'name',
+      'email',
+      'role'
+    ]
+  })
+    .then(user => { // don't ever give out the password or salt
+      if(!user) {
+        return res.status(401).end();
+      }
+      res.json(user);
+    })
+    .catch(err => next(err));
+});
+
+/**
  * Get a single user
  */
 router.get('/:id', auth.isAuthenticated(), function(req, res, next) {
@@ -114,32 +140,6 @@ router.put('/:id/password', auth.isAuthenticated(), function(req, res) {
         return res.status(403).end();
       }
     });
-});
-
-/**
- * Get my info
- */
-router.get('/me', auth.isAuthenticated(), function(req, res, next) {
-  var userId = req.user._id;
-
-  return User.find({
-    where: {
-      _id: userId
-    },
-    attributes: [
-      '_id',
-      'name',
-      'email',
-      'role'
-    ]
-  })
-    .then(user => { // don't ever give out the password or salt
-      if(!user) {
-        return res.status(401).end();
-      }
-      res.json(user);
-    })
-    .catch(err => next(err));
 });
 
 module.exports = router;

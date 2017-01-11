@@ -39,6 +39,13 @@ module.exports = function(sequelize, DataTypes) {
                     },
                     as: "createdByUser"
                 });
+
+                Question.belongsToMany(models.Tag, {
+                   through: "TagQuestion",
+                   onDelete: "CASCADE",
+                   foreignKey: "questionId",
+                   timestamps: false
+                });
             }
         }
     });

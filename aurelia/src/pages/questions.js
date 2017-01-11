@@ -1,5 +1,9 @@
+import {inject} from 'aurelia-framework';
+import {SharedResources} from '../config/sharedResources';
+
+@inject(SharedResources)
 export class Questions {
-  constructor() {
-    this.message = "hello";
+  constructor(sharedResources) {
+    this.sharedResources = sharedResources;
   }
 }
