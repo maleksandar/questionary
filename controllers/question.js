@@ -21,6 +21,9 @@ function handleError(res, statusCode) {
   };
 }
 
+/**
+ * Get list of questions
+ */
 router.get('/', function(req, res) {
   return Question.findAll({
     attributes: [
@@ -38,6 +41,9 @@ router.get('/', function(req, res) {
     .catch(handleError(res));
 });
 
+/**
+ * Create a new question
+ */
 router.post('/', auth.isAuthenticated(), function(req, res) {
   var newQuestion = Question.build(req.body);
   newQuestion.createdByUserId = req.user._id;
@@ -46,6 +52,26 @@ router.post('/', auth.isAuthenticated(), function(req, res) {
         res.json(question);
     })
     .catch(validationError(res));
+});
+
+/**
+ * Deletes a question
+ */
+router.delete('/:id', auth.isAuthenticated(), function(req, res) {
+  return Question.findOne({
+    attributes: ['createdByUserId'],
+    where: {
+      _id: req.params.id
+    }
+  })
+    .then(function(question) {
+      if(req.user._id == question.createdByUserId) 
+        return question.destroy();
+    })
+    .catch(validationError(res))
+    .then(function() {
+      res.status(200).json("{'message': 'OK'}");
+    });
 });
 
 module.exports = router;
