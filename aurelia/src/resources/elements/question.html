@@ -2,57 +2,45 @@
     <div class="container question">
             <!-- Headline -->
             <div class="row">
-                <div id="question-headline" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 question-clickable">${content.headline}</div>
+                <div class="col-lg-10 col-md-10 col-sm-8 col-xs-8 question-clickable question-headline">${content.headline}</div>
+                <!--if.bind="cuser.isLogedIn && content.createdByUserId == cuser.id"-->
+                <div class="col-lg-2 col-md-2 col-sm-4 col-xs-4 question-admin">
+                    <button class="btn btn-warning btn-xs">
+                        <i class="fa fa-pencil" aria-hidden="true"></i>
+                    </button>
+                    <button class="btn btn-danger btn-xs">
+                        <i class="fa fa-trash" aria-hidden="true"></i>
+                    </button>
+                </div> 
             </div>
-            <!-- TODO Edit & Delete -->
-            <div if.bind="cuser.isLogedIn && content.createdByUserId == cuser.id" class="row">
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 question-pencil">
-                    <i class="fa fa-pencil" aria-hidden="true"></i>
-                </div>
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 question-trash">
-                    <i class="fa fa-trash" aria-hidden="true"></i>
-                </div>
-            </div> 
 
-            <!-- Answers -->
             <div class="row">
-                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 question-answers">Answers: Broj odgovora</div>
-            </div>
-            <!-- Text -->
-            <div class="row question-text">
                 <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
                     <div class="row">
-                        <pre id="question-text">${content.text}</pre>
+                        <div class="question-text">${content.text}</div>
                     </div>
                 </div>
             </div>
-            <!-- Tags -->
+            <!-- Tags and Domain -->
             <div class="row">
-                <div id="question-tags" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                    <span class="tag tag-pill tag-info">java</span>
-                    <span class="tag tag-pill tag-info">thread</span>
-                    <span class="tag tag-pill tag-info">exeption</span>
-                    <span class="tag tag-pill tag-info">nekiTag</span>
+                <div class="col-lg-8 col-md-8 col-sm-8 col-xs-6 question-tags">
+                    <span class="tag tag-pill">java</span>
+                    <span class="tag tag-pill">thread</span>
+                    <span class="tag tag-pill">exeption</span>
+                    <span class="tag tag-pill">nekiTag</span>
+                </div>
+                <div class="col-lg-4 col-md-4 col-sm-4 col-xs-6 question-domain">
+                    <i>Some domain</i>
                 </div>
             </div>
-            <!-- Votes -->
             <div class="row">
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 votes-plus">
-                    <span class="fa fa-chevron-circle-up"></span> 
-                    ${content.positiveVotes} 
+                <div class="col-lg-8 col-md-8 col-sm-8 col-xs-12">
+                    <button class="btn btn-info btn-xs"><i class="fa fa-pencil" aria-hidden="true"></i><span> Answer</span> <span class="badge">15</span></button>
+                    <button class="btn btn-success btn-xs"><i class="fa fa-thumbs-o-up" aria-hidden="true"></i> <span class="badge">7</span></button>
+                    <button class="btn btn-danger btn-xs"><i class="fa fa-thumbs-o-down" aria-hidden="true"></i> <span class="badge">3</span></button>
                 </div>
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 votes-minus">
-                    ${content.negativeVotes} 
-                    <span class="fa fa-chevron-circle-down"></span>
-                </div>
-            </div>
-            <!-- Username and Domain -->
-            <div class="row">
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 question-user">
-                    <span class="question-clickable"><i class="fa fa-user-circle-o"></i>&nbsp;${content.createdByUserId}</span>
-                </div>
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 question-domain">
-                    <span class="question-clickable">Domain</span>
+                <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 question-user">
+                    <i class="fa fa-user-circle-o" aria-hidden="true"></i> <i>someuser@mail.com</i>
                 </div>
             </div>
      </div>

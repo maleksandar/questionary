@@ -22,12 +22,10 @@ export class Auth {
   }
 
   logout() {
+    sessionStorage.setItem('logedIn', "false");
+    this.isLogedIn = false;
     return this.httpClient.fetch('auth/logout', {
       method: 'post'
-    })
-    .then(response => { 
-      sessionStorage.setItem('logedIn', "false");
-      this.isLogedIn = false;
     });
   }
 }
