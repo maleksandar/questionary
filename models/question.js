@@ -42,6 +42,8 @@ module.exports = function (sequelize, DataTypes) {
 					Question.hasMany(models.TagQuestion, {
 						onDelete: "CASCADE"
 					});
+					Question.hasMany(models.Answer, {
+					});
 				}
 			}
 		});

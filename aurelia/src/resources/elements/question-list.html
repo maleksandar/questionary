@@ -1,7 +1,7 @@
 <template>
-  <require from="./question.html"></require>
+  <require from="./question"></require>
   <h1>QUESTIONS:</h1>
-  <div value.bind="currentIndex" class="container-fluid">
+  <div if.bind="questions.length !== 0" value.bind="currentIndex" class="container-fluid">
     <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12">
       <form action="">
         <div class="form-group">
@@ -26,4 +26,5 @@
       </div>
     </div>
   </div>
+  <div if.bind="questions.length === 0"> Nema postavljenih pitanja</div>
 </template>

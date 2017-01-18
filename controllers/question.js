@@ -2,10 +2,12 @@
 
 var Question = require('../models').Question;
 var Tag = require('../models').Tag;
+var Answer = require('../models').Answer;
 var TagQuestion = require('../models').TagQuestion;
 var config = require ('../config');
 var Router = require('express').Router;
 var auth = require('../auth/auth.service');
+var _ = require('lodash');
 
 var router = new Router();
 
@@ -33,8 +35,7 @@ router.get('/', function(req, res) {
   }
 
   return Question.findAll({
-
-    include: [TagQuestion],
+    include: getAdditionalInfoFilters(req.query.include),
     where: filter,
     limit: parseInt(req.query.limit) || 5,
     offset: parseInt(req.query.offset) || 0
@@ -46,7 +47,7 @@ router.get('/', function(req, res) {
 });
 
 router.get('/:id', function(req, res) {
-  return Question.findOne({ include: [TagQuestion], where: { _id: req.params.id } })
+  return Question.findOne({ include: getAdditionalInfoFilters(req.query.include), where: { _id: req.params.id } })
     .then(question => {
       if(!question) {
         return res.status(404).end();
@@ -55,14 +56,28 @@ router.get('/:id', function(req, res) {
     }).catch(handleError(res));
 });
 
+router.delete('/:id', function(req, res) {
+  return Question.destroy({ where: { _id: req.params.id } })
+    .then((numberOfQuestions )=> {
+      if(!numberOfQuestions) {
+        return res.status(404).send(`There is no question with id: ${req.params.id}`);
+      }
+      res.status(200).send(`Question deleted: ${req.params.id}`);
+    }).catch(handleError(res));
+});
+
 router.post('/', auth.isAuthenticated(), function(req, res) {
   var newQuestion = Question.build(req.body);
   newQuestion.createdByUserId = req.user._id;
+
   return newQuestion.save()
     .then(function(question) {
       if(req.body.Tags) {
         Tag.bulkCreate(req.body.Tags, { ignoreDuplicates: true })
           .then((tags) => {
+            // todo: refactor v
+            if(typeof tags === "string")
+              tags = [ tags ];
             var tagQuestions = [];
             tags.forEach((tag)=> tagQuestions.push({ QuestionId: newQuestion._id, TagText: tag.text }));
             TagQuestion.bulkCreate(tagQuestions, { ignoreDuplicates: true })
@@ -76,5 +91,18 @@ router.post('/', auth.isAuthenticated(), function(req, res) {
     })
     .catch(validationError(res));
 });
+
+function getAdditionalInfoFilters(queryFilter) {
+  if(typeof queryFilter === "string"){
+    queryFilter = [ queryFilter ];
+  }
+  var additionalInfoFilters = [];
+  if(_.includes(queryFilter, "Tags") || _.includes(queryFilter, "tags"))
+    additionalInfoFilters.push({ model: TagQuestion });
+  if(_.includes(queryFilter, "Answers") || _.includes(queryFilter, "answers"))
+    additionalInfoFilters.push({ model: Answer });
+  
+  return additionalInfoFilters;
+}
 
 module.exports = router;
