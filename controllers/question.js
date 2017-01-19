@@ -75,7 +75,7 @@ router.post('/', auth.isAuthenticated(), function(req, res) {
       if(req.body.Tags) {
         Tag.bulkCreate(req.body.Tags, { ignoreDuplicates: true })
           .then((tags) => {
-            // todo: refactor v
+            // todo: refactor v refactor so it functions for both postgress and mysql
             if(typeof tags === "string")
               tags = [ tags ];
             var tagQuestions = [];

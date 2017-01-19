@@ -24,7 +24,7 @@
         <!-- Tags and Domain -->
         <div class="row">
             <div class="col-lg-8 col-md-8 col-sm-8 col-xs-6 question-tags">
-                <span repeat.for="tag of content.Tags" class="tag tag-pill">${tag}</span>
+                <span repeat.for="tag of content.TagQuestions"> <span class="tag tag-pill"> ${tag.TagText} </span></span>
             </div>
             <div class="col-lg-4 col-md-4 col-sm-4 col-xs-6 question-domain">
                 <i>Some domain</i>
