@@ -22,16 +22,14 @@ module.exports = function (sequelize, DataTypes) {
             onDelete: "CASCADE",
             foreignKey: {
               allowNull: false
-            },
-            primaryKey: true
+            }
           });
 
           TagQuestion.belongsTo(models.Tag, {
             onDelete: "CASCADE",
             foreignKey: {
               allowNull: false
-            },
-            primaryKey: true
+            }
           });
         }
       }
