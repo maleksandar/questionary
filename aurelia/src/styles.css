@@ -142,3 +142,8 @@ li.list-group-item.active > a {
     background-color: #F2DEDE;
     color: darkred; 
 }
+
+ai-dialog-overlay.active {
+  background-color: black;
+  opacity: .5;
+}

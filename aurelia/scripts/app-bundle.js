@@ -1,4 +1,4 @@
-define('app',['exports', './services/auth', 'aurelia-framework'], function (exports, _auth, _aureliaFramework) {
+define('app',['exports', './services/auth', 'aurelia-framework', 'aurelia-dialog', './pages/login'], function (exports, _auth, _aureliaFramework, _aureliaDialog, _login) {
   'use strict';
 
   Object.defineProperty(exports, "__esModule", {
@@ -14,17 +14,30 @@ define('app',['exports', './services/auth', 'aurelia-framework'], function (expo
 
   var _dec, _class;
 
-  var App = exports.App = (_dec = (0, _aureliaFramework.inject)(_auth.Auth), _dec(_class = function () {
-    function App(auth) {
+  var App = exports.App = (_dec = (0, _aureliaFramework.inject)(_auth.Auth, _aureliaDialog.DialogService), _dec(_class = function () {
+    function App(auth, dialogService) {
       _classCallCheck(this, App);
 
       this.auth = auth;
+      this.dialogService = dialogService;
     }
 
     App.prototype.configureRouter = function configureRouter(config, router) {
       config.title = 'Questionary';
-      config.map([{ route: '', moduleId: 'pages/questions', title: 'Questions' }, { route: 'home', moduleId: 'pages/home', title: 'Home', nav: false }, { route: 'login', moduleId: 'pages/login', name: 'login', title: 'Log in' }, { route: 'logout', moduleId: 'pages/logout', name: 'logout', title: 'Log out' }, { route: 'signup', moduleId: 'pages/signup', name: 'signup', title: 'Sign up' }]);
+      config.map([{ route: '', moduleId: 'pages/questions', title: 'Questions' }, { route: 'home', moduleId: 'pages/home', title: 'Home', nav: false }, { route: 'login', moduleId: 'pages/login', name: 'login', title: 'Log in' }, { route: 'logout', moduleId: 'pages/logout', name: 'logout', title: 'Log out' }, { route: 'signup', moduleId: 'pages/signup', name: 'signup', title: 'Sign up' }, { route: 'question/:id', moduleId: 'pages/question-details', name: 'question-details', title: 'Question' }]);
       this.router = router;
+    };
+
+    App.prototype.loginModal = function loginModal() {
+      this.dialogService.open({ viewModel: _login.Login, model: 'Are you sure?' }).then(function (response) {
+        console.log(response);
+        if (!response.wasCancelled) {
+          console.log('OK');
+        } else {
+          console.log('cancelled');
+        }
+        console.log(response.output);
+      });
     };
 
     return App;
@@ -65,7 +78,7 @@ define('main',['exports', './environment', 'aurelia-fetch-client'], function (ex
   });
 
   function configure(aurelia) {
-    aurelia.use.standardConfiguration().feature('resources');
+    aurelia.use.standardConfiguration().feature('resources').plugin('aurelia-dialog');
 
     if (_environment2.default.debug) {
       aurelia.use.developmentLogging();
@@ -138,7 +151,7 @@ define('pages/home',['exports', '../services/auth', 'aurelia-framework'], functi
     return Home;
   }()) || _class);
 });
-define('pages/login',['exports', 'aurelia-framework', 'aurelia-router', 'aurelia-fetch-client', '../services/auth'], function (exports, _aureliaFramework, _aureliaRouter, _aureliaFetchClient, _auth) {
+define('pages/login',['exports', 'aurelia-framework', 'aurelia-router', 'aurelia-fetch-client', '../services/auth', 'aurelia-dialog'], function (exports, _aureliaFramework, _aureliaRouter, _aureliaFetchClient, _auth, _aureliaDialog) {
   'use strict';
 
   Object.defineProperty(exports, "__esModule", {
@@ -154,19 +167,21 @@ define('pages/login',['exports', 'aurelia-framework', 'aurelia-router', 'aurelia
 
   var _dec, _class;
 
-  var Login = exports.Login = (_dec = (0, _aureliaFramework.inject)(_auth.Auth, _aureliaRouter.Router, _aureliaFetchClient.HttpClient), _dec(_class = function () {
-    function Login(auth, router, httpClient) {
+  var Login = exports.Login = (_dec = (0, _aureliaFramework.inject)(_auth.Auth, _aureliaRouter.Router, _aureliaFetchClient.HttpClient, _aureliaDialog.DialogController), _dec(_class = function () {
+    function Login(auth, router, httpClient, dialogController) {
       _classCallCheck(this, Login);
 
       this.auth = auth;
       this.router = router;
       this.httpClient = httpClient;
+      this.dialogController = dialogController;
     }
 
     Login.prototype.login = function login() {
       var _this = this;
 
       this.auth.login(this.email, this.password).then(function () {
+        _this.dialogController.close();
         _this.router.navigate("");
       }).catch(function () {
         return _this.loginError = true;
@@ -210,6 +225,45 @@ define('pages/logout',['exports', 'aurelia-framework', 'aurelia-router', '../ser
       _this.router.navigate("");
     });
   }) || _class);
+});
+define('pages/question-details',['exports', 'aurelia-framework', 'aurelia-fetch-client', 'aurelia-router'], function (exports, _aureliaFramework, _aureliaFetchClient, _aureliaRouter) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.QuestionDetails = undefined;
+
+  function _classCallCheck(instance, Constructor) {
+    if (!(instance instanceof Constructor)) {
+      throw new TypeError("Cannot call a class as a function");
+    }
+  }
+
+  var _dec, _class;
+
+  var QuestionDetails = exports.QuestionDetails = (_dec = (0, _aureliaFramework.inject)(_aureliaFetchClient.HttpClient), _dec(_class = function () {
+    function QuestionDetails(httpClient) {
+      _classCallCheck(this, QuestionDetails);
+
+      this.httpClient = httpClient;
+    }
+
+    QuestionDetails.prototype.activate = function activate(params, routeConfig) {
+      var _this = this;
+
+      this.routeConfig = routeConfig;
+
+      return this.httpClient.fetch('questions/' + params.id + '?include=Tags&include=Answers').then(function (questionDetail) {
+        return questionDetail.json();
+      }).then(function (question) {
+        _this.questionContent = question;
+        _this.routeConfig.navModel.setTitle(question.headline);
+      });
+    };
+
+    return QuestionDetails;
+  }()) || _class);
 });
 define('pages/questions',["exports"], function (exports) {
   "use strict";
@@ -298,7 +352,8 @@ define('services/auth',['exports', 'aurelia-framework', 'aurelia-fetch-client'],
       _classCallCheck(this, Auth);
 
       this.httpClient = httpClient;
-      this.isLogedIn = sessionStorage.getItem("logedIn") === "true" ? true : false;
+      this.isLogedIn = sessionStorage.getItem("logedIn") === "true";
+      this.currentUser = { userId: "", role: "user" };
     }
 
     Auth.prototype.login = function login(email, password) {
@@ -308,15 +363,23 @@ define('services/auth',['exports', 'aurelia-framework', 'aurelia-fetch-client'],
         method: 'post',
         body: (0, _aureliaFetchClient.json)({ email: email, password: password })
       }).then(function (response) {
+        return response.json();
+      }).then(function (userinfo) {
+        console.log(userinfo);
+
         sessionStorage.setItem('logedIn', "true");
         _this.isLogedIn = true;
-        return response.json();
+        _this.currentUser.userId = userinfo.user_id;
+        sessionStorage.setItem('userId', userinfo.user_id);
+        return userinfo;
       });
     };
 
     Auth.prototype.logout = function logout() {
       sessionStorage.setItem('logedIn', "false");
       this.isLogedIn = false;
+      this.currentUser.userId = "";
+      sessionStorage.setItem('userId', "");
       return this.httpClient.fetch('auth/logout', {
         method: 'post'
       });
@@ -470,7 +533,7 @@ define('resources/elements/question-list',['exports', 'aurelia-framework', 'aure
     initializer: null
   })), _class2)) || _class);
 });
-define('resources/elements/question',['exports', 'aurelia-framework', 'aurelia-fetch-client', 'toastr'], function (exports, _aureliaFramework, _aureliaFetchClient, toastr) {
+define('resources/elements/question',['exports', 'aurelia-framework', 'aurelia-fetch-client', '../../services/auth', 'toastr'], function (exports, _aureliaFramework, _aureliaFetchClient, _auth, toastr) {
   'use strict';
 
   Object.defineProperty(exports, "__esModule", {
@@ -529,21 +592,22 @@ define('resources/elements/question',['exports', 'aurelia-framework', 'aurelia-f
 
   var _dec, _class, _desc, _value, _class2, _descriptor;
 
-  var Question = exports.Question = (_dec = (0, _aureliaFramework.inject)(_aureliaFetchClient.HttpClient, toastr), _dec(_class = (_class2 = function () {
-    function Question(httpClient, toastr) {
+  var Question = exports.Question = (_dec = (0, _aureliaFramework.inject)(_aureliaFetchClient.HttpClient, toastr, _auth.Auth), _dec(_class = (_class2 = function () {
+    function Question(httpClient, toastr, auth) {
       _classCallCheck(this, Question);
 
       _initDefineProp(this, 'content', _descriptor, this);
 
       this.httpClient = httpClient;
       this.toastr = toastr;
+      this.auth = auth;
     }
 
     Question.prototype.quickAnswer = function quickAnswer() {
       var _this = this;
 
       this.httpClient.fetch('answers', { method: 'post', body: (0, _aureliaFetchClient.json)({ text: this.answerText, QuestionId: this.content._id }) }).then(function () {
-        _this.toastr.success('You have successfully posted your question');
+        _this.toastr.success('You have successfully posted your answer');
       });
     };
 
@@ -553,15 +617,732 @@ define('resources/elements/question',['exports', 'aurelia-framework', 'aurelia-f
     initializer: null
   })), _class2)) || _class);
 });
-define('text!styles.css', ['module'], function(module) { module.exports = "section {\r\n  margin: 0 20px;\r\n}\r\n\r\na:focus {\r\n  outline: none;\r\n}\r\n\r\n.navbar-nav li.loader {\r\n    margin: 12px 24px 0 6px;\r\n}\r\n\r\n.no-selection {\r\n  margin: 20px;\r\n}\r\n\r\n.contact-list {\r\n  overflow-y: auto;\r\n  border: 1px solid #ddd;\r\n  padding: 10px;\r\n}\r\n\r\n.panel {\r\n  margin: 20px;\r\n}\r\n\r\n.button-bar {\r\n  right: 0;\r\n  left: 0;\r\n  bottom: 0;\r\n  border-top: 1px solid #ddd;\r\n  background: white;\r\n}\r\n\r\n.button-bar > button {\r\n  float: right;\r\n  margin: 20px;\r\n}\r\n\r\nli.list-group-item {\r\n  list-style: none;\r\n}\r\n\r\nli.list-group-item > a {\r\n  text-decoration: none;\r\n}\r\n\r\nli.list-group-item.active > a {\r\n  color: white;\r\n}\r\n\r\n.question {\r\n    background-color: #eee;\r\n    border-radius: 7px;\r\n    /*box-shadow: 2px 2px 2px 2px #eee;*/\r\n    border: 1px solid #eee;\r\n    color: #333;\r\n    text-align: left;\r\n    margin-bottom: 35px;\r\n}\r\n\r\n.question-clickable:hover {\r\n    color: dodgerblue;\r\n    cursor: pointer;\r\n}\r\n\r\n.question-text {\r\n    color: #333;\r\n    background-color: white;\r\n    text-align: start;\r\n}\r\n.tag-pill{\r\n    background-color: #888;\r\n}\r\n.question-text {\r\n    font-family: \"Arial\";\r\n    font-size: 16px;\r\n    white-space: pre-line;\r\n    height: 100%;\r\n}\r\n\r\n.question-headline {\r\n    font-size: 22px;\r\n    font-weight: bold;\r\n}\r\n\r\n.question-answers {\r\n    background-color: #444444;\r\n    color: #F2DEDE;\r\n}\r\n\r\n.question-tags {\r\n    /*background-color: #eee;*/\r\n    padding-bottom: 10px;\r\n    text-align: left;\r\n}\r\n\r\n.question-user {\r\n    font-style: italic;\r\n    font-size: 13px;\r\n    text-align: right;\r\n}\r\n\r\n.question-domain {\r\n    font-style: italic;\r\n    font-size: 13px;\r\n    text-align: right;\r\n}\r\n\r\n.question-admin {\r\n    text-align: right;\r\n}\r\n\r\n.question-trash {\r\n    background-color: #222222;\r\n    color: #FF3333;\r\n}\r\n\r\n.question-trash:hover {\r\n    background-color: #FF3333;\r\n    color: #222222;\r\n    cursor: pointer;\r\n}\r\n\r\n.question-pencil {\r\n    background-color: #222222;\r\n    color: #FFFF66;\r\n}\r\n\r\n.question-pencil:hover {\r\n    background-color: #FFFF66;\r\n    color: #222222;\r\n    cursor: pointer;\r\n}\r\n\r\n.votes-plus {\r\n    background-color: #DFF0D8;\r\n    color: seagreen;\r\n}\r\n\r\n.votes-minus {\r\n    background-color: #F2DEDE;\r\n    color: darkred; \r\n}\r\n"; });
-define('text!app.html', ['module'], function(module) { module.exports = "<template>\r\n  <require from=\"bootstrap/css/bootstrap.css\"></require>\r\n  <!--<require from=\"./services/auth.js\"></require>-->\r\n  <require from=\"./styles.css\"></require>\r\n\r\n<nav class=\"navbar navbar-inverse\">\r\n  <div class=\"container-fluid\">\r\n    <div class=\"navbar-header\">\r\n      <button type=\"button\" class=\"navbar-toggle\" data-toggle=\"collapse\" data-target=\"#myNavbar\">\r\n        <span class=\"icon-bar\"></span>\r\n        <span class=\"icon-bar\"></span>\r\n        <span class=\"icon-bar\"></span>                        \r\n      </button>\r\n      <a class=\"navbar-brand\" href=\"#\">Questionary</a>\r\n    </div>\r\n    <div class=\"collapse navbar-collapse\" id=\"myNavbar\">\r\n      <ul class=\"nav navbar-nav\">\r\n        <li><a if.bind=\"auth.isLogedIn\" href=\"/#/home\"><span class=\"fa fa-home\"></span>Home</a></li>\r\n        <li><a href=\"#\">About</a></li>\r\n      </ul>\r\n      <form class=\"navbar-form navbar-left\">\r\n        <div class=\"input-group\">\r\n          <div class=\"form-group\">\r\n            <input type=\"text\" class=\"form-control\" placeholder=\"Search\">\r\n          </div>\r\n          <div class=\"input-group-btn\">\r\n            <button type=\"submit\" class=\"btn btn-default\">Submit</button>\r\n          </div>\r\n        </div>\r\n      </form>\r\n      <ul class=\"nav navbar-nav navbar-right\">\r\n        <li><a if.bind=\"!auth.isLogedIn\" href=\"/#/signup\"><span class=\"fa fa-user\"></span> Sign Up</a></li>\r\n        <li><a if.bind=\"!auth.isLogedIn\" href=\"/#/login\"><span class=\"fa fa-sign-in\"></span> Login</a></li>\r\n        <li><a if.bind=\"auth.isLogedIn\" href=\"/#/logout\"><span class=\"fa fa-sign-out\"></span> Logout</a></li>\r\n      </ul>\r\n    </div>\r\n  </div>\r\n</nav>\r\n      <router-view class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\"></router-view>\r\n  </div>\r\n</template>\r\n"; });
+define('aurelia-dialog/ai-dialog',['exports', 'aurelia-templating'], function (exports, _aureliaTemplating) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.AiDialog = undefined;
+
+  
+
+  var _dec, _dec2, _class;
+
+  var AiDialog = exports.AiDialog = (_dec = (0, _aureliaTemplating.customElement)('ai-dialog'), _dec2 = (0, _aureliaTemplating.inlineView)('\n  <template>\n    <slot></slot>\n  </template>\n'), _dec(_class = _dec2(_class = function AiDialog() {
+    
+  }) || _class) || _class);
+});
+define('aurelia-dialog/ai-dialog-header',['exports', 'aurelia-templating', './dialog-controller'], function (exports, _aureliaTemplating, _dialogController) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.AiDialogHeader = undefined;
+
+  
+
+  var _dec, _dec2, _class, _class2, _temp;
+
+  var AiDialogHeader = exports.AiDialogHeader = (_dec = (0, _aureliaTemplating.customElement)('ai-dialog-header'), _dec2 = (0, _aureliaTemplating.inlineView)('\n  <template>\n    <button type="button" class="dialog-close" aria-label="Close" if.bind="!controller.settings.lock" click.trigger="controller.cancel()">\n      <span aria-hidden="true">&times;</span>\n    </button>\n\n    <div class="dialog-header-content">\n      <slot></slot>\n    </div>\n  </template>\n'), _dec(_class = _dec2(_class = (_temp = _class2 = function AiDialogHeader(controller) {
+    
+
+    this.controller = controller;
+  }, _class2.inject = [_dialogController.DialogController], _temp)) || _class) || _class);
+});
+define('aurelia-dialog/dialog-controller',['exports', './lifecycle', './dialog-result'], function (exports, _lifecycle, _dialogResult) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.DialogController = undefined;
+
+  
+
+  var DialogController = exports.DialogController = function () {
+    function DialogController(renderer, settings, resolve, reject) {
+      
+
+      this.renderer = renderer;
+      this.settings = settings;
+      this._resolve = resolve;
+      this._reject = reject;
+    }
+
+    DialogController.prototype.ok = function ok(output) {
+      return this.close(true, output);
+    };
+
+    DialogController.prototype.cancel = function cancel(output) {
+      return this.close(false, output);
+    };
+
+    DialogController.prototype.error = function error(message) {
+      var _this = this;
+
+      return (0, _lifecycle.invokeLifecycle)(this.viewModel, 'deactivate').then(function () {
+        return _this.renderer.hideDialog(_this);
+      }).then(function () {
+        _this.controller.unbind();
+        _this._reject(message);
+      });
+    };
+
+    DialogController.prototype.close = function close(ok, output) {
+      var _this2 = this;
+
+      if (this._closePromise) {
+        return this._closePromise;
+      }
+
+      this._closePromise = (0, _lifecycle.invokeLifecycle)(this.viewModel, 'canDeactivate').then(function (canDeactivate) {
+        if (canDeactivate) {
+          return (0, _lifecycle.invokeLifecycle)(_this2.viewModel, 'deactivate').then(function () {
+            return _this2.renderer.hideDialog(_this2);
+          }).then(function () {
+            var result = new _dialogResult.DialogResult(!ok, output);
+            _this2.controller.unbind();
+            _this2._resolve(result);
+            return result;
+          });
+        }
+
+        _this2._closePromise = undefined;
+      }, function (e) {
+        _this2._closePromise = undefined;
+        return Promise.reject(e);
+      });
+
+      return this._closePromise;
+    };
+
+    return DialogController;
+  }();
+});
+define('aurelia-dialog/lifecycle',['exports'], function (exports) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.invokeLifecycle = invokeLifecycle;
+  function invokeLifecycle(instance, name, model) {
+    if (typeof instance[name] === 'function') {
+      var result = instance[name](model);
+
+      if (result instanceof Promise) {
+        return result;
+      }
+
+      if (result !== null && result !== undefined) {
+        return Promise.resolve(result);
+      }
+
+      return Promise.resolve(true);
+    }
+
+    return Promise.resolve(true);
+  }
+});
+define('aurelia-dialog/dialog-result',["exports"], function (exports) {
+  "use strict";
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  
+
+  var DialogResult = exports.DialogResult = function DialogResult(cancelled, output) {
+    
+
+    this.wasCancelled = false;
+
+    this.wasCancelled = cancelled;
+    this.output = output;
+  };
+});
+define('aurelia-dialog/ai-dialog-body',['exports', 'aurelia-templating'], function (exports, _aureliaTemplating) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.AiDialogBody = undefined;
+
+  
+
+  var _dec, _dec2, _class;
+
+  var AiDialogBody = exports.AiDialogBody = (_dec = (0, _aureliaTemplating.customElement)('ai-dialog-body'), _dec2 = (0, _aureliaTemplating.inlineView)('\n  <template>\n    <slot></slot>\n  </template>\n'), _dec(_class = _dec2(_class = function AiDialogBody() {
+    
+  }) || _class) || _class);
+});
+define('aurelia-dialog/ai-dialog-footer',['exports', 'aurelia-templating', './dialog-controller'], function (exports, _aureliaTemplating, _dialogController) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.AiDialogFooter = undefined;
+
+  function _initDefineProp(target, property, descriptor, context) {
+    if (!descriptor) return;
+    Object.defineProperty(target, property, {
+      enumerable: descriptor.enumerable,
+      configurable: descriptor.configurable,
+      writable: descriptor.writable,
+      value: descriptor.initializer ? descriptor.initializer.call(context) : void 0
+    });
+  }
+
+  
+
+  function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
+    var desc = {};
+    Object['ke' + 'ys'](descriptor).forEach(function (key) {
+      desc[key] = descriptor[key];
+    });
+    desc.enumerable = !!desc.enumerable;
+    desc.configurable = !!desc.configurable;
+
+    if ('value' in desc || desc.initializer) {
+      desc.writable = true;
+    }
+
+    desc = decorators.slice().reverse().reduce(function (desc, decorator) {
+      return decorator(target, property, desc) || desc;
+    }, desc);
+
+    if (context && desc.initializer !== void 0) {
+      desc.value = desc.initializer ? desc.initializer.call(context) : void 0;
+      desc.initializer = undefined;
+    }
+
+    if (desc.initializer === void 0) {
+      Object['define' + 'Property'](target, property, desc);
+      desc = null;
+    }
+
+    return desc;
+  }
+
+  function _initializerWarningHelper(descriptor, context) {
+    throw new Error('Decorating class property failed. Please ensure that transform-class-properties is enabled.');
+  }
+
+  var _dec, _dec2, _class, _desc, _value, _class2, _descriptor, _descriptor2, _class3, _temp;
+
+  var AiDialogFooter = exports.AiDialogFooter = (_dec = (0, _aureliaTemplating.customElement)('ai-dialog-footer'), _dec2 = (0, _aureliaTemplating.inlineView)('\n  <template>\n    <slot></slot>\n\n    <template if.bind="buttons.length > 0">\n      <button type="button" class="btn btn-default" repeat.for="button of buttons" click.trigger="close(button)">${button}</button>\n    </template>\n  </template>\n'), _dec(_class = _dec2(_class = (_class2 = (_temp = _class3 = function () {
+    function AiDialogFooter(controller) {
+      
+
+      _initDefineProp(this, 'buttons', _descriptor, this);
+
+      _initDefineProp(this, 'useDefaultButtons', _descriptor2, this);
+
+      this.controller = controller;
+    }
+
+    AiDialogFooter.prototype.close = function close(buttonValue) {
+      if (AiDialogFooter.isCancelButton(buttonValue)) {
+        this.controller.cancel(buttonValue);
+      } else {
+        this.controller.ok(buttonValue);
+      }
+    };
+
+    AiDialogFooter.prototype.useDefaultButtonsChanged = function useDefaultButtonsChanged(newValue) {
+      if (newValue) {
+        this.buttons = ['Cancel', 'Ok'];
+      }
+    };
+
+    AiDialogFooter.isCancelButton = function isCancelButton(value) {
+      return value === 'Cancel';
+    };
+
+    return AiDialogFooter;
+  }(), _class3.inject = [_dialogController.DialogController], _temp), (_descriptor = _applyDecoratedDescriptor(_class2.prototype, 'buttons', [_aureliaTemplating.bindable], {
+    enumerable: true,
+    initializer: function initializer() {
+      return [];
+    }
+  }), _descriptor2 = _applyDecoratedDescriptor(_class2.prototype, 'useDefaultButtons', [_aureliaTemplating.bindable], {
+    enumerable: true,
+    initializer: function initializer() {
+      return false;
+    }
+  })), _class2)) || _class) || _class);
+});
+define('aurelia-dialog/attach-focus',['exports', 'aurelia-templating'], function (exports, _aureliaTemplating) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.AttachFocus = undefined;
+
+  
+
+  var _dec, _class, _class2, _temp;
+
+  var AttachFocus = exports.AttachFocus = (_dec = (0, _aureliaTemplating.customAttribute)('attach-focus'), _dec(_class = (_temp = _class2 = function () {
+    function AttachFocus(element) {
+      
+
+      this.value = true;
+
+      this.element = element;
+    }
+
+    AttachFocus.prototype.attached = function attached() {
+      if (this.value && this.value !== 'false') {
+        this.element.focus();
+      }
+    };
+
+    AttachFocus.prototype.valueChanged = function valueChanged(newValue) {
+      this.value = newValue;
+    };
+
+    return AttachFocus;
+  }(), _class2.inject = [Element], _temp)) || _class);
+});
+define('aurelia-dialog/dialog-configuration',['exports', './renderer', './dialog-renderer', './dialog-options', 'aurelia-pal'], function (exports, _renderer, _dialogRenderer, _dialogOptions, _aureliaPal) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.DialogConfiguration = undefined;
+
+  
+
+  var defaultRenderer = _dialogRenderer.DialogRenderer;
+
+  var resources = {
+    'ai-dialog': './ai-dialog',
+    'ai-dialog-header': './ai-dialog-header',
+    'ai-dialog-body': './ai-dialog-body',
+    'ai-dialog-footer': './ai-dialog-footer',
+    'attach-focus': './attach-focus'
+  };
+
+  var defaultCSSText = 'ai-dialog-container,ai-dialog-overlay{position:fixed;top:0;right:0;bottom:0;left:0}ai-dialog-overlay{opacity:0}ai-dialog-overlay.active{opacity:1}ai-dialog-container{display:block;transition:opacity .2s linear;opacity:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch}ai-dialog-container.active{opacity:1}ai-dialog-container>div{padding:30px}ai-dialog-container>div>div{display:block;min-width:300px;width:-moz-fit-content;width:-webkit-fit-content;width:fit-content;height:-moz-fit-content;height:-webkit-fit-content;height:fit-content;margin:auto}ai-dialog-container,ai-dialog-container>div,ai-dialog-container>div>div{outline:0}ai-dialog{display:table;box-shadow:0 5px 15px rgba(0,0,0,.5);border:1px solid rgba(0,0,0,.2);border-radius:5px;padding:3;min-width:300px;width:-moz-fit-content;width:-webkit-fit-content;width:fit-content;height:-moz-fit-content;height:-webkit-fit-content;height:fit-content;margin:auto;border-image-source:initial;border-image-slice:initial;border-image-width:initial;border-image-outset:initial;border-image-repeat:initial;background:#fff}ai-dialog>ai-dialog-header{display:block;padding:16px;border-bottom:1px solid #e5e5e5}ai-dialog>ai-dialog-header>button{float:right;border:none;display:block;width:32px;height:32px;background:0 0;font-size:22px;line-height:16px;margin:-14px -16px 0 0;padding:0;cursor:pointer}ai-dialog>ai-dialog-body{display:block;padding:16px}ai-dialog>ai-dialog-footer{display:block;padding:6px;border-top:1px solid #e5e5e5;text-align:right}ai-dialog>ai-dialog-footer button{color:#333;background-color:#fff;padding:6px 12px;font-size:14px;text-align:center;white-space:nowrap;vertical-align:middle;-ms-touch-action:manipulation;touch-action:manipulation;cursor:pointer;background-image:none;border:1px solid #ccc;border-radius:4px;margin:5px 0 5px 5px}ai-dialog>ai-dialog-footer button:disabled{cursor:default;opacity:.45}ai-dialog>ai-dialog-footer button:hover:enabled{color:#333;background-color:#e6e6e6;border-color:#adadad}.ai-dialog-open{overflow:hidden}';
+
+  var DialogConfiguration = exports.DialogConfiguration = function () {
+    function DialogConfiguration(aurelia) {
+      
+
+      this.aurelia = aurelia;
+      this.settings = _dialogOptions.dialogOptions;
+      this.resources = [];
+      this.cssText = defaultCSSText;
+      this.renderer = defaultRenderer;
+    }
+
+    DialogConfiguration.prototype.useDefaults = function useDefaults() {
+      return this.useRenderer(defaultRenderer).useCSS(defaultCSSText).useStandardResources();
+    };
+
+    DialogConfiguration.prototype.useStandardResources = function useStandardResources() {
+      return this.useResource('ai-dialog').useResource('ai-dialog-header').useResource('ai-dialog-body').useResource('ai-dialog-footer').useResource('attach-focus');
+    };
+
+    DialogConfiguration.prototype.useResource = function useResource(resourceName) {
+      this.resources.push(resourceName);
+      return this;
+    };
+
+    DialogConfiguration.prototype.useRenderer = function useRenderer(renderer, settings) {
+      this.renderer = renderer;
+      this.settings = Object.assign(this.settings, settings || {});
+      return this;
+    };
+
+    DialogConfiguration.prototype.useCSS = function useCSS(cssText) {
+      this.cssText = cssText;
+      return this;
+    };
+
+    DialogConfiguration.prototype._apply = function _apply() {
+      var _this = this;
+
+      this.aurelia.transient(_renderer.Renderer, this.renderer);
+      this.resources.forEach(function (resourceName) {
+        return _this.aurelia.globalResources(resources[resourceName]);
+      });
+
+      if (this.cssText) {
+        _aureliaPal.DOM.injectStyles(this.cssText);
+      }
+    };
+
+    return DialogConfiguration;
+  }();
+});
+define('aurelia-dialog/renderer',['exports'], function (exports) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  
+
+  var Renderer = exports.Renderer = function () {
+    function Renderer() {
+      
+    }
+
+    Renderer.prototype.getDialogContainer = function getDialogContainer() {
+      throw new Error('DialogRenderer must implement getDialogContainer().');
+    };
+
+    Renderer.prototype.showDialog = function showDialog(dialogController) {
+      throw new Error('DialogRenderer must implement showDialog().');
+    };
+
+    Renderer.prototype.hideDialog = function hideDialog(dialogController) {
+      throw new Error('DialogRenderer must implement hideDialog().');
+    };
+
+    return Renderer;
+  }();
+});
+define('aurelia-dialog/dialog-renderer',['exports', 'aurelia-pal', 'aurelia-dependency-injection'], function (exports, _aureliaPal, _aureliaDependencyInjection) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.DialogRenderer = undefined;
+
+  
+
+  var _dec, _class;
+
+  var containerTagName = 'ai-dialog-container';
+  var overlayTagName = 'ai-dialog-overlay';
+  var transitionEvent = function () {
+    var transition = null;
+
+    return function () {
+      if (transition) return transition;
+
+      var t = void 0;
+      var el = _aureliaPal.DOM.createElement('fakeelement');
+      var transitions = {
+        'transition': 'transitionend',
+        'OTransition': 'oTransitionEnd',
+        'MozTransition': 'transitionend',
+        'WebkitTransition': 'webkitTransitionEnd'
+      };
+      for (t in transitions) {
+        if (el.style[t] !== undefined) {
+          transition = transitions[t];
+          return transition;
+        }
+      }
+    };
+  }();
+
+  var DialogRenderer = exports.DialogRenderer = (_dec = (0, _aureliaDependencyInjection.transient)(), _dec(_class = function () {
+    function DialogRenderer() {
+      var _this = this;
+
+      
+
+      this._escapeKeyEventHandler = function (e) {
+        if (e.keyCode === 27) {
+          var top = _this._dialogControllers[_this._dialogControllers.length - 1];
+          if (top && top.settings.lock !== true) {
+            top.cancel();
+          }
+        }
+      };
+    }
+
+    DialogRenderer.prototype.getDialogContainer = function getDialogContainer() {
+      return _aureliaPal.DOM.createElement('div');
+    };
+
+    DialogRenderer.prototype.showDialog = function showDialog(dialogController) {
+      var _this2 = this;
+
+      var settings = dialogController.settings;
+      var body = _aureliaPal.DOM.querySelectorAll('body')[0];
+      var wrapper = document.createElement('div');
+
+      this.modalOverlay = _aureliaPal.DOM.createElement(overlayTagName);
+      this.modalContainer = _aureliaPal.DOM.createElement(containerTagName);
+      this.anchor = dialogController.slot.anchor;
+      wrapper.appendChild(this.anchor);
+      this.modalContainer.appendChild(wrapper);
+
+      this.stopPropagation = function (e) {
+        e._aureliaDialogHostClicked = true;
+      };
+      this.closeModalClick = function (e) {
+        if (!settings.lock && !e._aureliaDialogHostClicked) {
+          dialogController.cancel();
+        } else {
+          return false;
+        }
+      };
+
+      dialogController.centerDialog = function () {
+        if (settings.centerHorizontalOnly) return;
+        centerDialog(_this2.modalContainer);
+      };
+
+      this.modalOverlay.style.zIndex = settings.startingZIndex;
+      this.modalContainer.style.zIndex = settings.startingZIndex;
+
+      var lastContainer = Array.from(body.querySelectorAll(containerTagName)).pop();
+
+      if (lastContainer) {
+        lastContainer.parentNode.insertBefore(this.modalContainer, lastContainer.nextSibling);
+        lastContainer.parentNode.insertBefore(this.modalOverlay, lastContainer.nextSibling);
+      } else {
+        body.insertBefore(this.modalContainer, body.firstChild);
+        body.insertBefore(this.modalOverlay, body.firstChild);
+      }
+
+      if (!this._dialogControllers.length) {
+        _aureliaPal.DOM.addEventListener('keyup', this._escapeKeyEventHandler);
+      }
+
+      this._dialogControllers.push(dialogController);
+
+      dialogController.slot.attached();
+
+      if (typeof settings.position === 'function') {
+        settings.position(this.modalContainer, this.modalOverlay);
+      } else {
+        dialogController.centerDialog();
+      }
+
+      this.modalContainer.addEventListener('click', this.closeModalClick);
+      this.anchor.addEventListener('click', this.stopPropagation);
+
+      return new Promise(function (resolve) {
+        var renderer = _this2;
+        if (settings.ignoreTransitions) {
+          resolve();
+        } else {
+          _this2.modalContainer.addEventListener(transitionEvent(), onTransitionEnd);
+        }
+
+        _this2.modalOverlay.classList.add('active');
+        _this2.modalContainer.classList.add('active');
+        body.classList.add('ai-dialog-open');
+
+        function onTransitionEnd(e) {
+          if (e.target !== renderer.modalContainer) {
+            return;
+          }
+          renderer.modalContainer.removeEventListener(transitionEvent(), onTransitionEnd);
+          resolve();
+        }
+      });
+    };
+
+    DialogRenderer.prototype.hideDialog = function hideDialog(dialogController) {
+      var _this3 = this;
+
+      var settings = dialogController.settings;
+      var body = _aureliaPal.DOM.querySelectorAll('body')[0];
+
+      this.modalContainer.removeEventListener('click', this.closeModalClick);
+      this.anchor.removeEventListener('click', this.stopPropagation);
+
+      var i = this._dialogControllers.indexOf(dialogController);
+      if (i !== -1) {
+        this._dialogControllers.splice(i, 1);
+      }
+
+      if (!this._dialogControllers.length) {
+        _aureliaPal.DOM.removeEventListener('keyup', this._escapeKeyEventHandler);
+      }
+
+      return new Promise(function (resolve) {
+        var renderer = _this3;
+        if (settings.ignoreTransitions) {
+          resolve();
+        } else {
+          _this3.modalContainer.addEventListener(transitionEvent(), onTransitionEnd);
+        }
+
+        _this3.modalOverlay.classList.remove('active');
+        _this3.modalContainer.classList.remove('active');
+
+        function onTransitionEnd() {
+          renderer.modalContainer.removeEventListener(transitionEvent(), onTransitionEnd);
+          resolve();
+        }
+      }).then(function () {
+        body.removeChild(_this3.modalOverlay);
+        body.removeChild(_this3.modalContainer);
+        dialogController.slot.detached();
+
+        if (!_this3._dialogControllers.length) {
+          body.classList.remove('ai-dialog-open');
+        }
+
+        return Promise.resolve();
+      });
+    };
+
+    return DialogRenderer;
+  }()) || _class);
+
+
+  DialogRenderer.prototype._dialogControllers = [];
+
+  function centerDialog(modalContainer) {
+    var child = modalContainer.children[0];
+    var vh = Math.max(_aureliaPal.DOM.querySelectorAll('html')[0].clientHeight, window.innerHeight || 0);
+
+    child.style.marginTop = Math.max((vh - child.offsetHeight) / 2, 30) + 'px';
+    child.style.marginBottom = Math.max((vh - child.offsetHeight) / 2, 30) + 'px';
+  }
+});
+define('aurelia-dialog/dialog-options',["exports"], function (exports) {
+  "use strict";
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  var dialogOptions = exports.dialogOptions = {
+    lock: true,
+    centerHorizontalOnly: false,
+    startingZIndex: 1000,
+    ignoreTransitions: false
+  };
+});
+define('aurelia-dialog/dialog-service',['exports', 'aurelia-metadata', 'aurelia-dependency-injection', 'aurelia-templating', './dialog-controller', './renderer', './lifecycle', './dialog-result', './dialog-options'], function (exports, _aureliaMetadata, _aureliaDependencyInjection, _aureliaTemplating, _dialogController, _renderer, _lifecycle, _dialogResult, _dialogOptions) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.DialogService = undefined;
+
+  
+
+  var _class, _temp;
+
+  var DialogService = exports.DialogService = (_temp = _class = function () {
+    function DialogService(container, compositionEngine) {
+      
+
+      this.container = container;
+      this.compositionEngine = compositionEngine;
+      this.controllers = [];
+      this.hasActiveDialog = false;
+    }
+
+    DialogService.prototype.open = function open(settings) {
+      return this.openAndYieldController(settings).then(function (controller) {
+        return controller.result;
+      });
+    };
+
+    DialogService.prototype.openAndYieldController = function openAndYieldController(settings) {
+      var _this = this;
+
+      var childContainer = this.container.createChild();
+      var dialogController = void 0;
+      var promise = new Promise(function (resolve, reject) {
+        dialogController = new _dialogController.DialogController(childContainer.get(_renderer.Renderer), _createSettings(settings), resolve, reject);
+      });
+      childContainer.registerInstance(_dialogController.DialogController, dialogController);
+      dialogController.result = promise;
+      dialogController.result.then(function () {
+        _removeController(_this, dialogController);
+      }, function () {
+        _removeController(_this, dialogController);
+      });
+      return _openDialog(this, childContainer, dialogController).then(function () {
+        return dialogController;
+      });
+    };
+
+    return DialogService;
+  }(), _class.inject = [_aureliaDependencyInjection.Container, _aureliaTemplating.CompositionEngine], _temp);
+
+
+  function _createSettings(settings) {
+    settings = Object.assign({}, _dialogOptions.dialogOptions, settings);
+    settings.startingZIndex = _dialogOptions.dialogOptions.startingZIndex;
+    return settings;
+  }
+
+  function _openDialog(service, childContainer, dialogController) {
+    var host = dialogController.renderer.getDialogContainer();
+    var instruction = {
+      container: service.container,
+      childContainer: childContainer,
+      model: dialogController.settings.model,
+      view: dialogController.settings.view,
+      viewModel: dialogController.settings.viewModel,
+      viewSlot: new _aureliaTemplating.ViewSlot(host, true),
+      host: host
+    };
+
+    return _getViewModel(instruction, service.compositionEngine).then(function (returnedInstruction) {
+      dialogController.viewModel = returnedInstruction.viewModel;
+      dialogController.slot = returnedInstruction.viewSlot;
+
+      return (0, _lifecycle.invokeLifecycle)(dialogController.viewModel, 'canActivate', dialogController.settings.model).then(function (canActivate) {
+        if (canActivate) {
+          return service.compositionEngine.compose(returnedInstruction).then(function (controller) {
+            service.controllers.push(dialogController);
+            service.hasActiveDialog = !!service.controllers.length;
+            dialogController.controller = controller;
+            dialogController.view = controller.view;
+
+            return dialogController.renderer.showDialog(dialogController);
+          });
+        }
+      });
+    });
+  }
+
+  function _getViewModel(instruction, compositionEngine) {
+    if (typeof instruction.viewModel === 'function') {
+      instruction.viewModel = _aureliaMetadata.Origin.get(instruction.viewModel).moduleId;
+    }
+
+    if (typeof instruction.viewModel === 'string') {
+      return compositionEngine.ensureViewModel(instruction);
+    }
+
+    return Promise.resolve(instruction);
+  }
+
+  function _removeController(service, controller) {
+    var i = service.controllers.indexOf(controller);
+    if (i !== -1) {
+      service.controllers.splice(i, 1);
+      service.hasActiveDialog = !!service.controllers.length;
+    }
+  }
+});
+define('text!app.html', ['module'], function(module) { module.exports = "<template>\r\n  <require from=\"bootstrap/css/bootstrap.css\"></require>\r\n  <require from=\"./styles.css\"></require>\r\n  <require from=\"./pages/login\"></require>\r\n\r\n<nav class=\"navbar navbar-inverse\">\r\n  <div class=\"container-fluid\">\r\n    <div class=\"navbar-header\">\r\n      <button type=\"button\" class=\"navbar-toggle\" data-toggle=\"collapse\" data-target=\"#myNavbar\">\r\n        <span class=\"icon-bar\"></span>\r\n        <span class=\"icon-bar\"></span>\r\n        <span class=\"icon-bar\"></span>                        \r\n      </button>\r\n      <a class=\"navbar-brand\" href=\"#\">Questionary</a>\r\n    </div>\r\n    <div class=\"collapse navbar-collapse\" id=\"myNavbar\">\r\n      <ul class=\"nav navbar-nav\">\r\n        <li><a if.bind=\"auth.isLogedIn\" href=\"/#/home\"><span class=\"fa fa-home\"></span>Home</a></li>\r\n        <li><a href=\"#\">About</a></li>\r\n      </ul>\r\n      <form class=\"navbar-form navbar-left\">\r\n        <div class=\"input-group\">\r\n          <div class=\"form-group\">\r\n            <input type=\"text\" class=\"form-control\" placeholder=\"Search\">\r\n          </div>\r\n          <div class=\"input-group-btn\">\r\n            <button type=\"submit\" class=\"btn btn-default\">Submit</button>\r\n          </div>\r\n        </div>\r\n      </form>\r\n      <ul class=\"nav navbar-nav navbar-right\">\r\n        <li><a if.bind=\"!auth.isLogedIn\" href=\"/#/signup\"><span class=\"fa fa-user\"></span> Sign Up</a></li>\r\n        <li><a if.bind=\"!auth.isLogedIn\" href=\"#\" click.trigger=\"loginModal()\"><span class=\"fa fa-sign-in\"></span> Login</a></li>\r\n        <li><a if.bind=\"auth.isLogedIn\" href=\"/#/logout\"><span class=\"fa fa-sign-out\"></span> Logout</a></li>\r\n      </ul>\r\n    </div>\r\n  </div>\r\n</nav>\r\n      <router-view class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\"></router-view>\r\n  </div>\r\n</template>\r\n"; });
+define('text!styles.css', ['module'], function(module) { module.exports = "section {\r\n  margin: 0 20px;\r\n}\r\n\r\na:focus {\r\n  outline: none;\r\n}\r\n\r\n.navbar-nav li.loader {\r\n    margin: 12px 24px 0 6px;\r\n}\r\n\r\n.no-selection {\r\n  margin: 20px;\r\n}\r\n\r\n.contact-list {\r\n  overflow-y: auto;\r\n  border: 1px solid #ddd;\r\n  padding: 10px;\r\n}\r\n\r\n.panel {\r\n  margin: 20px;\r\n}\r\n\r\n.button-bar {\r\n  right: 0;\r\n  left: 0;\r\n  bottom: 0;\r\n  border-top: 1px solid #ddd;\r\n  background: white;\r\n}\r\n\r\n.button-bar > button {\r\n  float: right;\r\n  margin: 20px;\r\n}\r\n\r\nli.list-group-item {\r\n  list-style: none;\r\n}\r\n\r\nli.list-group-item > a {\r\n  text-decoration: none;\r\n}\r\n\r\nli.list-group-item.active > a {\r\n  color: white;\r\n}\r\n\r\n.question {\r\n    background-color: #eee;\r\n    border-radius: 7px;\r\n    /*box-shadow: 2px 2px 2px 2px #eee;*/\r\n    border: 1px solid #eee;\r\n    color: #333;\r\n    text-align: left;\r\n    margin-bottom: 35px;\r\n}\r\n\r\n.question-clickable:hover {\r\n    color: dodgerblue;\r\n    cursor: pointer;\r\n}\r\n\r\n.question-text {\r\n    color: #333;\r\n    background-color: white;\r\n    text-align: start;\r\n}\r\n.tag-pill{\r\n    background-color: #888;\r\n}\r\n.question-text {\r\n    font-family: \"Arial\";\r\n    font-size: 16px;\r\n    white-space: pre-line;\r\n    height: 100%;\r\n}\r\n\r\n.question-headline {\r\n    font-size: 22px;\r\n    font-weight: bold;\r\n}\r\n\r\n.question-answers {\r\n    background-color: #444444;\r\n    color: #F2DEDE;\r\n}\r\n\r\n.question-tags {\r\n    /*background-color: #eee;*/\r\n    padding-bottom: 10px;\r\n    text-align: left;\r\n}\r\n\r\n.question-user {\r\n    font-style: italic;\r\n    font-size: 13px;\r\n    text-align: right;\r\n}\r\n\r\n.question-domain {\r\n    font-style: italic;\r\n    font-size: 13px;\r\n    text-align: right;\r\n}\r\n\r\n.question-admin {\r\n    text-align: right;\r\n}\r\n\r\n.question-trash {\r\n    background-color: #222222;\r\n    color: #FF3333;\r\n}\r\n\r\n.question-trash:hover {\r\n    background-color: #FF3333;\r\n    color: #222222;\r\n    cursor: pointer;\r\n}\r\n\r\n.question-pencil {\r\n    background-color: #222222;\r\n    color: #FFFF66;\r\n}\r\n\r\n.question-pencil:hover {\r\n    background-color: #FFFF66;\r\n    color: #222222;\r\n    cursor: pointer;\r\n}\r\n\r\n.votes-plus {\r\n    background-color: #DFF0D8;\r\n    color: seagreen;\r\n}\r\n\r\n.votes-minus {\r\n    background-color: #F2DEDE;\r\n    color: darkred; \r\n}\r\n\r\nai-dialog-overlay.active {\r\n  background-color: black;\r\n  opacity: .5;\r\n}"; });
 define('text!pages/home.html', ['module'], function(module) { module.exports = "<template>\r\n<question-form></question-form>\r\n</template>\r\n"; });
-define('text!pages/login.html', ['module'], function(module) { module.exports = "<template>\r\n  <div class=\"row\"><h3 class=\"col-lg-offset-2 col-lg-6 col-md-offset-2 col-md-6\r\n                              col-sm-offset-3 col-sm-6\">Log in with your credentials</h3></div>\r\n  <form class=\"form-horizontal\" role=\"form\" submit.delegate = \"login()\">\r\n    <div class=\"form-group\">\r\n      <label class=\"control-label col-lg-2 col-md-2 col-sm-3\" for=\"email\">Email:</label>\r\n      <div class=\"col-lg-6 col-md-6 col-sm-6\">\r\n        <input value.bind=\"email\" type=\"email\" class=\"form-control\" id=\"email\" placeholder=\"Enter your email\">\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">\r\n      <label class=\"control-label col-lg-2 col-md-2 col-sm-3\" for=\"pwd\">Password:</label>\r\n      <div class=\"col-lg-6 col-md-6 col-sm-6\">          \r\n        <input value.bind=\"password\" type=\"password\" class=\"form-control\" id=\"pwd\" placeholder=\"Enter your password\">\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">        \r\n      <div class=\"col-lg-offset-2 col-lg-6 col-md-offset-2 col-md-6 col-sm-offset-3 col-sm-6\">\r\n        <div class=\"checkbox\">\r\n          <label><input type=\"checkbox\"> Remember me</label>\r\n        </div>\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">        \r\n      <div show.bind=\"loginError\" class=\"col-lg-offset-2 col-lg-6 col-md-offset-2 col-md-6 col-sm-offset-3 col-sm-6 alert alert-danger\">\r\n        <p><i class=\"fa fa-exclamation\" aria-hidden=\"true\"></i> <strong> Error: </strong> Email or password you provided do not match with any existing user</p>\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">        \r\n      <div class=\"col-lg-offset-2 col-lg-6 col-md-offset-2 col-md-6 col-sm-offset-3 col-sm-6\">\r\n        <button type=\"submit\" class=\"btn btn-default\">Log in</button>\r\n      </div>\r\n    </div>\r\n  </form>\r\n</template>"; });
+define('text!pages/login.html', ['module'], function(module) { module.exports = "<template>\r\n  <ai-dialog>\r\n    <ai-dialog-header>\r\n      <button type=\"button\" class=\"close\" click.trigger=\"dialogController.cancel()\">&times;</button>\r\n      <h4 class=\"modal-title\">Modal Header</h4>\r\n    </ai-dialog-header>\r\n    <ai-dialog-body>\r\n      <form class=\"form-horizontal\" role=\"form\" submit.delegate=\"login()\">\r\n        <div class=\"form-group\">\r\n          <label class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\" for=\"email\">Email:</label>\r\n          <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n            <input value.bind=\"email\" type=\"email\" class=\"form-control\" id=\"email\" placeholder=\"Enter your email\">\r\n          </div>\r\n        </div>\r\n        <div class=\"form-group\">\r\n          <label class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\" for=\"pwd\">Password:</label>\r\n          <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n            <input value.bind=\"password\" type=\"password\" class=\"form-control\" id=\"pwd\" placeholder=\"Enter your password\">\r\n          </div>\r\n        </div>\r\n        <div class=\"form-group\">\r\n          <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n            <div class=\"checkbox\">\r\n              <label><input type=\"checkbox\"> Remember me</label>\r\n            </div>\r\n          </div>\r\n        </div>\r\n        <div class=\"form-group\">\r\n          <div show.bind=\"loginError\" class=\"col-lg-offset-2 col-lg-6 col-md-offset-2 col-md-6 col-sm-offset-3 col-sm-6 alert alert-danger\">\r\n            <p><i class=\"fa fa-exclamation\" aria-hidden=\"true\"></i> <strong> Error: </strong> Email or password you provided\r\n              do not match with any existing user</p>\r\n          </div>\r\n        </div>\r\n        <div class=\"form-group\">\r\n          <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n            <button type=\"submit\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12 btn btn-default btn-lg\">\r\n              <i class=\"fa fa-sign-in\" aria-hidden=\"true\"></i>\r\n              <span>Log in</span>\r\n            </button>\r\n          </div>\r\n        </div>\r\n      </form>\r\n    </ai-dialog-body>\r\n  </ai-dialog>\r\n</template>"; });
 define('text!pages/logout.html', ['module'], function(module) { module.exports = "<template>...loging out...</template>"; });
+define('text!pages/question-details.html', ['module'], function(module) { module.exports = "<template>\r\n  <require from=\"../resources/elements/question\"></require>\r\n  <question content.bind=\"questionContent\"></question>\r\n  <div>\r\n    <li repeat.for=\"answer of questionContent.Answers\">\r\n      <p>${ answer.text }</p>\r\n    </li>\r\n  </div>\r\n</template>"; });
 define('text!pages/questions.html', ['module'], function(module) { module.exports = "<template>\r\n  <question-list></question-list>\r\n</template>"; });
 define('text!pages/signup.html', ['module'], function(module) { module.exports = "<template>\r\n  <div class=\"row\"><h3 class=\"col-lg-offset-2 col-lg-6 col-md-offset-2 col-md-6\r\n                              col-sm-offset-3 col-sm-6\">Sign up with your credentials</h3></div>\r\n  <form class=\"form-horizontal\" role=\"form\" submit.delegate = \"signup()\">\r\n    <div class=\"form-group\">\r\n      <label class=\"control-label col-lg-2 col-md-2 col-sm-3\" for=\"name\">Full name:</label>\r\n      <div class=\"col-lg-6 col-md-6 col-sm-6\">\r\n        <input value.bind=\"name\" type=\"text\" class=\"form-control\" id=\"name\" placeholder=\"Enter your full name\">\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">\r\n      <label class=\"control-label col-lg-2 col-md-2 col-sm-3\" for=\"email\">Email:</label>\r\n      <div class=\"col-lg-6 col-md-6 col-sm-6\">\r\n        <input value.bind=\"email\" type=\"email\" class=\"form-control\" id=\"email\" placeholder=\"Enter your email\">\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">\r\n      <label class=\"control-label col-lg-2 col-md-2 col-sm-3\" for=\"pwd\">Password:</label>\r\n      <div class=\"col-lg-6 col-md-6 col-sm-6\">          \r\n        <input value.bind=\"password\" type=\"password\" class=\"form-control\" id=\"pwd\" placeholder=\"Enter password\">\r\n      </div>\r\n    </div> \r\n    <div class=\"form-group\">        \r\n      <div class=\"col-lg-offset-2 col-lg-6 col-md-offset-2 col-md-6 col-sm-offset-3 col-sm-6\">\r\n        <button type=\"submit\" class=\"btn btn-default\">Sign up</button>\r\n      </div>\r\n    </div>\r\n  </form>\r\n</template>"; });
 define('text!resources/elements/navigation-element.html', ['module'], function(module) { module.exports = "<template bindable=\"href, title, icon\">\r\n      <a class=\"navbar-brand\" href=\"${href}\">\r\n        <i class=\"${icon}\"></i>\r\n        <span>${title}</span>\r\n      </a>\r\n</template>"; });
 define('text!resources/elements/question-form.html', ['module'], function(module) { module.exports = "<template>\r\n  <require from=\"toastr/build/toastr.min.css\"></require>\r\n  <div class=\"col-sm-offset-4 col-sm-8\"><button class=\"btn btn-default\" data-toggle=\"collapse\" data-target=\".questionForm\">Ask a Question</button></div>\r\n  <div class=\"questionForm collapse row\"><h3 class=\"col-sm-offset-4 col-sm-8\">Ask your question</h3></div>\r\n  <form class=\"questionForm collapse form-horizontal\" role=\"form\" submit.delegate = \"postQuestion()\">\r\n    <div class=\"form-group\">\r\n      <label class=\"control-label col-sm-4\" for=\"email\">Headline:</label>\r\n      <div class=\"col-sm-8\">\r\n        <input value.bind=\"headline\" type=\"text\" class=\"form-control\" name=\"headline\" placeholder=\"Enter the headline of your question\">\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">\r\n      <label class=\"control-label col-sm-4\" for=\"pwd\">Text:</label>\r\n      <div class=\"col-sm-8\">      \r\n        <textarea value.bind=\"text\" class=\"form-control\" rows=\"7\" name=\"text\" placeholder=\"Enter the text of your question\"></textarea>\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">        \r\n      <div show.bind=\"serverError\" class=\"col-sm-offset-4 col-sm-8 alert alert-danger\">\r\n        <p><i class=\"fa fa-exclamation\" aria-hidden=\"true\"></i> <strong> Error: </strong> Some kind of a server error! </p>\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">        \r\n      <div class=\"col-sm-offset-4 col-sm-8\">\r\n        <button type=\"submit\" class=\"btn btn-default\">Post question</button>\r\n      </div>\r\n    </div>\r\n  </form>\r\n</template>\r\n"; });
-define('text!resources/elements/question-list.html', ['module'], function(module) { module.exports = "<template>\r\n  <require from=\"./question\"></require>\r\n  <h1>QUESTIONS:</h1>\r\n  <div if.bind=\"questions.length !== 0\" value.bind=\"currentIndex\" class=\"container-fluid\">\r\n    <div class=\"col-lg-4 col-md-4 col-sm-12 col-xs-12\">\r\n      <form action=\"\">\r\n        <div class=\"form-group\">\r\n          label <input type=\"text\" class=\"form-control\"> \r\n          label <input type=\"text\" class=\"form-control\"> \r\n          label <input type=\"text\" class=\"form-control\">\r\n        </div>\r\n      </form>\r\n    </div>\r\n    <div class=\"col-lg-8 col-md-8 col-sm-12 col-xs-12\">\r\n      <div if.bind=\"qssIsNotEmpty\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\" repeat.for=\"question of qss[currentIndex]\">\r\n        <question content.bind=\"question\"></question>\r\n      </div>\r\n      <div class=\"row\">\r\n        <div if.bind=\"qssIsNotEmpty\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\" style=\"text-align: center;\">\r\n          <ul class=\"pagination pagination\" repeat.for=\"index of pageIndexes\">\r\n            <li class=\"${currentIndex == index? 'active':''}\">\r\n              <a click.delegate=\"setPage(index)\" href=\"#\">${index+1}</a>\r\n            </li>\r\n          </ul>\r\n        </div>\r\n      </div>\r\n    </div>\r\n  </div>\r\n  <div if.bind=\"questions.length === 0\"> Nema postavljenih pitanja</div>\r\n</template>"; });
-define('text!resources/elements/question.html', ['module'], function(module) { module.exports = "<template>\r\n    <div class=\"container question\">\r\n        <!-- Headline -->\r\n        <div class=\"row\">\r\n            <div class=\"col-lg-10 col-md-10 col-sm-8 col-xs-8 question-clickable question-headline\">${content.headline}</div>\r\n            <!--if.bind=\"cuser.isLogedIn && content.createdByUserId == cuser.id\"-->\r\n            <div class=\"col-lg-2 col-md-2 col-sm-4 col-xs-4 question-admin\">\r\n                <button class=\"btn btn-warning btn-xs\">\r\n                        <i class=\"fa fa-pencil\" aria-hidden=\"true\"></i>\r\n                    </button>\r\n                <button class=\"btn btn-danger btn-xs\">\r\n                        <i class=\"fa fa-trash\" aria-hidden=\"true\"></i>\r\n                    </button>\r\n            </div>\r\n        </div>\r\n\r\n        <div class=\"row\">\r\n            <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n                <div class=\"row\">\r\n                    <div class=\"question-text\">${content.text}</div>\r\n                </div>\r\n            </div>\r\n        </div>\r\n        <!-- Tags and Domain -->\r\n        <div class=\"row\">\r\n            <div class=\"col-lg-8 col-md-8 col-sm-8 col-xs-6 question-tags\">\r\n                <span repeat.for=\"tag of content.Tags\" class=\"tag tag-pill\">${tag}</span>\r\n            </div>\r\n            <div class=\"col-lg-4 col-md-4 col-sm-4 col-xs-6 question-domain\">\r\n                <i>Some domain</i>\r\n            </div>\r\n        </div>\r\n        <div class=\"row\">\r\n            <div class=\"col-lg-8 col-md-8 col-sm-8 col-xs-12\">\r\n                <button class=\"btn btn-info btn-xs\" data-toggle=\"collapse\" data-target=\"#quick-answer-${content._id}\"><i class=\"fa fa-pencil\" aria-hidden=\"true\"></i><span> Answer</span> <span class=\"badge\">${content.Answers.length}</span></button>\r\n                <button class=\"btn btn-success btn-xs\"><i class=\"fa fa-thumbs-o-up\" aria-hidden=\"true\"></i> <span class=\"badge\">${content.positiveVotes}</span></button>\r\n                <button class=\"btn btn-danger btn-xs\"><i class=\"fa fa-thumbs-o-down\" aria-hidden=\"true\"></i> <span class=\"badge\">${content.positiveVotes}</span></button>\r\n            </div>\r\n            <div class=\"col-lg-4 col-md-4 col-sm-4 col-xs-12 question-user\">\r\n                <i class=\"fa fa-user-circle-o\" aria-hidden=\"true\"></i> <i>someuser@mail.com</i>\r\n            </div>\r\n            <div id=\"quick-answer-${content._id}\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12 collapse \">\r\n                <form class=\"form-horizontal\" role=\"form\" submit.delegate=\"quickAnswer()\">\r\n                    <div class=\"form-group\">\r\n                        <label class=\"control-label\" for=\"answer\">Answer:</label>\r\n                        <textarea value.bind=\"answerText\" class=\"form-control\" rows=\"7\" name=\"answer\" placeholder=\"Enter quick answer here\"></textarea>\r\n                        <button type=\"submit\" class=\"btn btn-default\">Post answer</button>\r\n                    </div>\r\n                </form>\r\n            </div>\r\n        </div>\r\n    </div>\r\n</template>"; });
+define('text!resources/elements/question-list.html', ['module'], function(module) { module.exports = "<template>\r\n  <require from=\"./question\"></require>\r\n  <div if.bind=\"questions.length !== 0\" value.bind=\"currentIndex\" class=\"container-fluid\">\r\n    <div class=\"col-lg-4 col-md-4 col-sm-12 col-xs-12\">\r\n      <form action=\"\">\r\n        <div class=\"form-group\">\r\n          label <input type=\"text\" class=\"form-control\"> label <input type=\"text\" class=\"form-control\"> label <input type=\"text\"\r\n            class=\"form-control\">\r\n        </div>\r\n      </form>\r\n    </div>\r\n    <div class=\"col-lg-8 col-md-8 col-sm-12 col-xs-12\">\r\n      <div if.bind=\"qssIsNotEmpty\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\" repeat.for=\"question of qss[currentIndex]\">\r\n        <question content.bind=\"question\"></question>\r\n      </div>\r\n      <div class=\"row\">\r\n        <div if.bind=\"qssIsNotEmpty\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\" style=\"text-align: center;\">\r\n          <ul class=\"pagination pagination\" repeat.for=\"index of pageIndexes\">\r\n            <li class=\"${currentIndex == index? 'active':''}\">\r\n              <a click.delegate=\"setPage(index)\" href=\"#\">${index+1}</a>\r\n            </li>\r\n          </ul>\r\n        </div>\r\n      </div>\r\n    </div>\r\n  </div>\r\n  <div if.bind=\"questions.length === 0\">\r\n    <div class=\"jumbotron\"> Nema postavljenih pitanja</div>\r\n  </div>\r\n</template>"; });
+define('text!resources/elements/question.html', ['module'], function(module) { module.exports = "<template>\r\n    <div class=\"question\">\r\n        <!-- Headline -->\r\n        <div class=\"row\">\r\n            <div class=\"col-lg-10 col-md-10 col-sm-8 col-xs-8 question-clickable question-headline\"> <a route-href=\"route: question-details; params.bind: { id: content._id }\">${content.headline}</a></div>\r\n            <!--if.bind=\"cuser.isLogedIn && content.createdByUserId == cuser.id\"-->\r\n            <div if.bind=\"auth.currentUser.userId === content.createdByUserId\" class=\"col-lg-2 col-md-2 col-sm-4 col-xs-4 question-admin\">\r\n                <button class=\"btn btn-warning btn-xs\">\r\n                    <i class=\"fa fa-pencil\" aria-hidden=\"true\"></i>\r\n                </button>\r\n                <button class=\"btn btn-danger btn-xs\">\r\n                    <i class=\"fa fa-trash\" aria-hidden=\"true\"></i>\r\n                </button>\r\n            </div>\r\n        </div>\r\n\r\n        <div>\r\n            <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n                <div class=\"row\">\r\n                    <div class=\"question-text\">${content.text}</div>\r\n                </div>\r\n            </div>\r\n        </div>\r\n        <!-- Tags and Domain -->\r\n        <div class=\"row\">\r\n            <div class=\"col-lg-8 col-md-8 col-sm-8 col-xs-6 question-tags\">\r\n                <span repeat.for=\"tag of content.Tags\" class=\"tag tag-pill\">${tag}</span>\r\n            </div>\r\n            <div class=\"col-lg-4 col-md-4 col-sm-4 col-xs-6 question-domain\">\r\n                <i>Some domain</i>\r\n            </div>\r\n        </div>\r\n        <div class=\"row\">\r\n            <div class=\"col-lg-8 col-md-8 col-sm-8 col-xs-12\">\r\n                <button if.bind=\"auth.isLogedIn\" class=\"btn btn-info btn-xs\" data-toggle=\"collapse\" data-target=\"#quick-answer-${content._id}\"><i class=\"fa fa-pencil\" aria-hidden=\"true\"></i><span> Answer</span> <span class=\"badge\">${content.Answers.length}</span></button>\r\n                <button if.bind=\"auth.isLogedIn\" class=\"btn btn-success btn-xs\"><i class=\"fa fa-thumbs-o-up\" aria-hidden=\"true\"></i> <span class=\"badge\">${content.positiveVotes}</span></button>\r\n                <button if.bind=\"auth.isLogedIn\" class=\"btn btn-danger btn-xs\"><i class=\"fa fa-thumbs-o-down\" aria-hidden=\"true\"></i> <span class=\"badge\">${content.positiveVotes}</span></button>\r\n            </div>\r\n            <div class=\"col-lg-4 col-md-4 col-sm-4 col-xs-12 question-user\">\r\n                <i class=\"fa fa-user-circle-o\" aria-hidden=\"true\"></i> <i>someuser@mail.com</i>\r\n            </div>\r\n            <div id=\"quick-answer-${content._id}\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12 collapse\">\r\n                <form class=\"form-horizontal\" role=\"form\" submit.delegate=\"quickAnswer()\">\r\n                    <div class=\"form-group col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n                        <label class=\"control-label\" for=\"answer\">Answer:</label>\r\n                        <textarea value.bind=\"answerText\" class=\"form-control\" rows=\"7\" name=\"answer\" placeholder=\"Enter quick answer here\"></textarea>\r\n                        <button type=\"submit\" class=\"btn btn-default\">Post answer</button>\r\n                    </div>\r\n                </form>\r\n            </div>\r\n        </div>\r\n    </div>\r\n</template>"; });
 //# sourceMappingURL=app-bundle.js.map

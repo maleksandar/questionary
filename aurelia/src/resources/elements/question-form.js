@@ -18,7 +18,6 @@ export class QuestionForm {
       body: json({ headline: this.headline, text: this.text })
     })
     .then(() => {
-      // todo: add toster!
       this.toastr.success('You have successfully posted your question');
       this.router.navigate("");
     })

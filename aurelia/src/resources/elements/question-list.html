@@ -1,13 +1,11 @@
 <template>
   <require from="./question"></require>
-  <h1>QUESTIONS:</h1>
   <div if.bind="questions.length !== 0" value.bind="currentIndex" class="container-fluid">
     <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12">
       <form action="">
         <div class="form-group">
-          label <input type="text" class="form-control"> 
-          label <input type="text" class="form-control"> 
-          label <input type="text" class="form-control">
+          label <input type="text" class="form-control"> label <input type="text" class="form-control"> label <input type="text"
+            class="form-control">
         </div>
       </form>
     </div>
@@ -26,5 +24,7 @@
       </div>
     </div>
   </div>
-  <div if.bind="questions.length === 0"> Nema postavljenih pitanja</div>
+  <div if.bind="questions.length === 0">
+    <div class="jumbotron"> Nema postavljenih pitanja</div>
+  </div>
 </template>

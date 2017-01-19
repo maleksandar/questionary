@@ -98,9 +98,9 @@ function getAdditionalInfoFilters(queryFilter) {
   }
   var additionalInfoFilters = [];
   if(_.includes(queryFilter, "Tags") || _.includes(queryFilter, "tags"))
-    additionalInfoFilters.push({ model: TagQuestion });
+    additionalInfoFilters.push(TagQuestion);
   if(_.includes(queryFilter, "Answers") || _.includes(queryFilter, "answers"))
-    additionalInfoFilters.push({ model: Answer });
+    additionalInfoFilters.push(Answer);
   
   return additionalInfoFilters;
 }

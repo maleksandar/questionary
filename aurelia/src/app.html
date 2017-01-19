@@ -1,7 +1,7 @@
 <template>
   <require from="bootstrap/css/bootstrap.css"></require>
-  <!--<require from="./services/auth.js"></require>-->
   <require from="./styles.css"></require>
+  <require from="./pages/login"></require>
 
 <nav class="navbar navbar-inverse">
   <div class="container-fluid">
@@ -30,7 +30,7 @@
       </form>
       <ul class="nav navbar-nav navbar-right">
         <li><a if.bind="!auth.isLogedIn" href="/#/signup"><span class="fa fa-user"></span> Sign Up</a></li>
-        <li><a if.bind="!auth.isLogedIn" href="/#/login"><span class="fa fa-sign-in"></span> Login</a></li>
+        <li><a if.bind="!auth.isLogedIn" href="#" click.trigger="loginModal()"><span class="fa fa-sign-in"></span> Login</a></li>
         <li><a if.bind="auth.isLogedIn" href="/#/logout"><span class="fa fa-sign-out"></span> Logout</a></li>
       </ul>
     </div>
