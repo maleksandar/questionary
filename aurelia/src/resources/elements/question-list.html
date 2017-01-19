@@ -1,20 +1,30 @@
 <template>
-  <require from="./question.html"></require>
-  <h1>QUESTIONS:</h1>
-  <div value.bind="currentIndex" class="container-fluid"> 
-    <div class="row">
-      <div if.bind="qssIsNotEmpty" class="col-lg-12 col-md-12 col-sm-12 col-xs-12" repeat.for="question of qss[currentIndex]">
-        <question content.bind="question" cuser.bind="sharedResources"></question>
-      </div>
+  <require from="./question"></require>
+  <div if.bind="questions.length !== 0" value.bind="currentIndex" class="container-fluid">
+    <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12">
+      <form action="">
+        <div class="form-group">
+          label <input type="text" class="form-control"> label <input type="text" class="form-control"> label <input type="text"
+            class="form-control">
+        </div>
+      </form>
     </div>
-    <div class="row">
-      <div if.bind="qssIsNotEmpty" class="col-lg-12 col-md-12 col-sm-12 col-xs-12" style="text-align: center;">
+    <div class="col-lg-8 col-md-8 col-sm-12 col-xs-12">
+      <div if.bind="qssIsNotEmpty" class="col-lg-12 col-md-12 col-sm-12 col-xs-12" repeat.for="question of qss[currentIndex]">
+        <question content.bind="question"></question>
+      </div>
+      <div class="row">
+        <div if.bind="qssIsNotEmpty" class="col-lg-12 col-md-12 col-sm-12 col-xs-12" style="text-align: center;">
           <ul class="pagination pagination" repeat.for="index of pageIndexes">
             <li class="${currentIndex == index? 'active':''}">
-               <a click.delegate="setPage(index)" href="#">${index+1}</a>
+              <a click.delegate="setPage(index)" href="#">${index+1}</a>
             </li>
           </ul>
+        </div>
       </div>
     </div>
+  </div>
+  <div if.bind="questions.length === 0">
+    <div class="jumbotron"> Nema postavljenih pitanja</div>
   </div>
 </template>

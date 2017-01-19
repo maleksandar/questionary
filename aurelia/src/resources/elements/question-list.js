@@ -1,17 +1,14 @@
 import {bindable, inject} from 'aurelia-framework';
 import {HttpClient} from 'aurelia-fetch-client';
-import {SharedResources} from '../../config/sharedResources';
 
-@inject(HttpClient, SharedResources)
+@inject(HttpClient)
 export class QuestionList {
   @bindable value;
 
-  constructor(httpClient, sharedResources) {
+  constructor(httpClient) {
     this.httpClient = httpClient;
-    this.sharedResources = sharedResources;
     this.qss = [];
     this.pageIndexes = [];
-    sharedResources.currentIndex = -1;
     this.qssIsNotEmpty = false;
 
     this.httpClient.fetch('questions')
