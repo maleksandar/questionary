@@ -26,6 +26,20 @@ function handleError(res, statusCode) {
   };
 }
 
+router.get('/user/:id', (req, res) => {
+   return Question.findAll({
+    include: getAdditionalInfoFilters(req.query.include),
+    where: { createdByUserId: req.params.id },
+    limit: parseInt(req.query.limit) || 5,
+    offset: parseInt(req.query.offset) || 0
+  })
+    .then(questions => {
+      res.status(200).json(questions);
+    })
+    .catch(handleError(res));
+});
+
+
 router.get('/', function(req, res) {
   var filter = {};
   if(req.query.questiontext) {

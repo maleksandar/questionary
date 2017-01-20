@@ -29,9 +29,9 @@
         </div>
       </form>
       <ul class="nav navbar-nav navbar-right">
-        <li><a if.bind="!auth.isLogedIn" href="/#/signup"><span class="fa fa-user"></span> Sign Up</a></li>
+        <li><a if.bind="!auth.isLogedIn" href="#" click.trigger="signupModal()"><span class="fa fa-user"></span> Sign Up</a></li>
         <li><a if.bind="!auth.isLogedIn" href="#" click.trigger="loginModal()"><span class="fa fa-sign-in"></span> Login</a></li>
-        <li><a if.bind="auth.isLogedIn" href="/#/logout"><span class="fa fa-sign-out"></span> Logout</a></li>
+        <li><a if.bind="auth.isLogedIn" href="#" click.trigger="auth.logout()"><span class="fa fa-sign-out"></span> Logout</a></li>
       </ul>
     </div>
   </div>

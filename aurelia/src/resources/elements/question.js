@@ -19,6 +19,7 @@ export class Question {
   quickAnswer() {
     this.httpClient.fetch('answers', { method: 'post', body: json({ text: this.answerText, QuestionId: this.content._id }) })
       .then(() => {
+        this.answerText = "";
         this.toastr.success('You have successfully posted your answer');
       });
   }
