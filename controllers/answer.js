@@ -27,12 +27,14 @@ router.get('/question/:id', function(req, res) {
       '_id',
       'text',
       'positiveVotes',
+      'createdAt',
+      'updatedAt',
       'negativeVotes',
-      'forQuestionId',
+      'QuestionId',
       "createdByUserId"
     ],
     where: {
-      forQuestionId: req.params.id
+      QuestionId: req.params.id
     }
   })
     .then(answers => {

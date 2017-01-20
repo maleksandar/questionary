@@ -123,6 +123,11 @@
             "main": "aurelia-dialog"
           },
           {
+            "name": "lodash",
+            "path": "../node_modules/lodash",
+            "main": "lodash"
+          },
+          {
             "name": "toastr",
             "path": "../node_modules/toastr",
             "main": "toastr",

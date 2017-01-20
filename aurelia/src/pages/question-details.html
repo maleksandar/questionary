@@ -1,9 +1,11 @@
 <template>
   <require from="../resources/elements/question"></require>
+  <require from="../resources/elements/answer"></require>
+
   <question content.bind="questionContent"></question>
   <div>
-    <li repeat.for="answer of questionContent.Answers">
-      <p>${ answer.text }</p>
-    </li>
+    <div repeat.for="answer of answers">
+      <answer content.bind="answer"></answer>
+    </div>
   </div>
 </template>

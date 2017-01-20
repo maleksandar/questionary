@@ -11,12 +11,23 @@ export class QuestionDetails {
 
   activate(params, routeConfig) {
     this.routeConfig = routeConfig;
-   
-    return this.httpClient.fetch(`questions/${params.id}?include=Tags&include=Answers`)
+
+    var questionPromise = this.httpClient.fetch(`questions/${params.id}?include=Tags&include=Answers`)
       .then(questionDetail => questionDetail.json())
       .then(question => { 
         this.questionContent = question; 
         this.routeConfig.navModel.setTitle(question.headline);
+      console.log(question);
       });
+
+    var answerPromise = this.httpClient.fetch(`answers/question/${params.id}`)
+      .then(response => response.json())
+      .then(answers => { 
+        this.answers = answers; 
+      console.log(answers);
+        
+      });
+
+    return Promise.all([questionPromise, answerPromise]);
   }
 }

@@ -6,7 +6,8 @@ export class Auth {
   constructor(httpClient) {
     this.httpClient = httpClient;
     this.isLogedIn = sessionStorage.getItem("logedIn") === "true";
-    this.currentUser = { userId: "", role: "user" }
+    this.currentUser = { userId: sessionStorage.getItem("userId"), role: sessionStorage.getItem("role") }
+    console.log('auth constructor', this.currentUser);
   }
 
   login(email, password) {

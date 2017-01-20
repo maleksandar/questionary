@@ -3,6 +3,7 @@
 var Question = require('../models').Question;
 var Tag = require('../models').Tag;
 var Answer = require('../models').Answer;
+var User = require('../models').User;
 var TagQuestion = require('../models').TagQuestion;
 var config = require ('../config');
 var Router = require('express').Router;
