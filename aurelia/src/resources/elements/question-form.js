@@ -1,14 +1,12 @@
-import {HttpClient, json} from 'aurelia-fetch-client';
-import {inject} from 'aurelia-framework';
-import {Router} from 'aurelia-router';
+import { HttpClient, json } from 'aurelia-fetch-client';
+import { inject } from 'aurelia-framework';
 var toastr = require('toastr');
 
 
-@inject(HttpClient, Router, toastr)
+@inject(HttpClient, toastr)
 export class QuestionForm {
-  constructor(httpClient, router, toastr) {
+  constructor(httpClient, toastr) {
     this.httpClient = httpClient;
-    this.router = router;
     this.toastr = toastr;
     this.tags = [];
     this.tag = "";
@@ -22,7 +20,9 @@ export class QuestionForm {
     })
     .then(() => {
       this.toastr.success('You have successfully posted your question');
-      this.router.navigate("");
+      this.headline = "";
+      this.text = "";
+      this.tags = [];
     })
     .catch(() => this.serverError = true);
   }
