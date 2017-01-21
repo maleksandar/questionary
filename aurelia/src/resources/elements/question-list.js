@@ -11,7 +11,7 @@ export class QuestionList {
     this.pageIndexes = [];
     this.qssIsNotEmpty = false;
 
-    this.httpClient.fetch('questions')
+    this.httpClient.fetch('questions?include=Answers&include=Tags')
       .then(response => response.json())
       .then(questions => {
         this.questions = questions;

@@ -3,6 +3,7 @@
 var Question = require('../models').Question;
 var Tag = require('../models').Tag;
 var Answer = require('../models').Answer;
+var User = require('../models').User;
 var TagQuestion = require('../models').TagQuestion;
 var config = require ('../config');
 var Router = require('express').Router;
@@ -24,6 +25,20 @@ function handleError(res, statusCode) {
     return res.status(statusCode).send(err);
   };
 }
+
+router.get('/user/:id', (req, res) => {
+   return Question.findAll({
+    include: getAdditionalInfoFilters(req.query.include),
+    where: { createdByUserId: req.params.id },
+    limit: parseInt(req.query.limit) || 5,
+    offset: parseInt(req.query.offset) || 0
+  })
+    .then(questions => {
+      res.status(200).json(questions);
+    })
+    .catch(handleError(res));
+});
+
 
 router.get('/', function(req, res) {
   var filter = {};
@@ -75,7 +90,7 @@ router.post('/', auth.isAuthenticated(), function(req, res) {
       if(req.body.Tags) {
         Tag.bulkCreate(req.body.Tags, { ignoreDuplicates: true })
           .then((tags) => {
-            // todo: refactor v
+            // todo: refactor v refactor so it functions for both postgress and mysql
             if(typeof tags === "string")
               tags = [ tags ];
             var tagQuestions = [];

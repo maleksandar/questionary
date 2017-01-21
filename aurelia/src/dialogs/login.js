@@ -17,7 +17,7 @@ export class Login {
     this.auth.login(this.email, this.password)
       .then(() => {
         this.dialogController.close();
-        this.router.navigate("");
+        // this.router.navigate("");
       })
       .catch(() => this.loginError = true)
       .then(() => {
