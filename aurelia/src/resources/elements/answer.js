@@ -12,11 +12,21 @@ export class Answer {
   }
 
   voteUp() {
-    this.httpClient.fetch('answers/votes/' + this.content._id.toString() + '/thumbsup', { method: 'put'});
+    this.httpClient.fetch('answers/votes/' + this.content._id.toString() + '/thumbsup', { method: 'put'})
+      .then(response => response.json())
+      .then(voteResp => {
+        if(voteResp.vote)
+          this.content.positiveVotes += 1;
+      });
   }
 
   voteDown() {
-    this.httpClient.fetch('answers/votes/' + this.content._id.toString() + '/thumbsdown', { method: 'put'});
+    this.httpClient.fetch('answers/votes/' + this.content._id.toString() + '/thumbsdown', { method: 'put'})
+      .then(response => response.json())
+      .then(voteResp => {
+        if(voteResp.vote)
+          this.content.negativeVotes += 1;
+      });
   }
 
   @computedFrom('auth.currentUser.userId', 'content.createdByUserId')

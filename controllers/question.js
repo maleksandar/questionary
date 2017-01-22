@@ -155,7 +155,7 @@ router.put('/votes/:id/thumbsup', auth.isAuthenticated(), function(req, res) {
             question.addUsers([req.user._id]);
             question.save().then(question => {
               res.status(200).json({vote: true});
-            });
+            }).catch(handleError(res));
           }
           else {
             res.status(200).json({vote: false});
@@ -181,7 +181,7 @@ router.put('/votes/:id/thumbsdown', auth.isAuthenticated(), function(req, res) {
             question.addUsers([req.user._id]);
             question.save().then(question => {
               res.status(200).json({vote: true});
-            });
+            }).catch(handleError(res));
           }
           else {
             res.status(200).json({vote: false});
