@@ -45,7 +45,8 @@
     "elements": "src/resources/elements",
     "attributes": "src/resources/attributes",
     "valueConverters": "src/resources/value-converters",
-    "bindingBehaviors": "src/resources/binding-behaviors"
+    "bindingBehaviors": "src/resources/binding-behaviors",
+    "services": "src/services"
   },
   "testFramework": {
     "id": "jasmine",
@@ -116,6 +117,21 @@
           "aurelia-templating",
           "aurelia-templating-binding",
           "aurelia-fetch-client",
+          {
+            "name": "aurelia-dialog",
+            "path": "../node_modules/aurelia-dialog/dist/amd",
+            "main": "aurelia-dialog"
+          },
+          {
+            "name": "lodash",
+            "path": "../node_modules/lodash",
+            "main": "lodash"
+          },
+          {
+            "name": "moment",
+            "path": "../node_modules/moment",
+            "main": "moment"
+          },
           {
             "name": "toastr",
             "path": "../node_modules/toastr",

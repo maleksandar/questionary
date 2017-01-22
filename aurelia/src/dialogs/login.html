@@ -1,0 +1,45 @@
+<template>
+  <ai-dialog>
+    <ai-dialog-header>
+      <button type="button" class="close" click.trigger="dialogController.cancel()">&times;</button>
+      <h4 class="modal-title">Log in</h4>
+    </ai-dialog-header>
+    <ai-dialog-body>
+      <form class="form-horizontal" role="form" submit.delegate="login()">
+        <div class="form-group">
+          <label class="col-lg-12 col-md-12 col-sm-12 col-xs-12" for="email">Email:</label>
+          <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <input value.bind="email" type="email" class="form-control" id="email" placeholder="Enter your email">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-lg-12 col-md-12 col-sm-12 col-xs-12" for="pwd">Password:</label>
+          <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <input value.bind="password" type="password" class="form-control" id="pwd" placeholder="Enter your password">
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <div class="checkbox">
+              <label><input type="checkbox"> Remember me</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <div show.bind="loginError" class="col-lg-offset-2 col-lg-6 col-md-offset-2 col-md-6 col-sm-offset-3 col-sm-6 alert alert-danger">
+            <p><i class="fa fa-exclamation" aria-hidden="true"></i> <strong> Error: </strong> Email or password you provided
+              do not match with any existing user</p>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <button type="submit" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 btn btn-default btn-lg">
+              <i class="fa fa-sign-in" aria-hidden="true"></i>
+              <span>Log in</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </ai-dialog-body>
+  </ai-dialog>
+</template>

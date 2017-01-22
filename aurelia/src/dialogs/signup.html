@@ -1,0 +1,39 @@
+<template>
+  <ai-dialog>
+    <ai-dialog-header>
+      <button type="button" class="close" click.trigger="dialogController.cancel()">&times;</button>
+      <h4 class="modal-title">Sign up with your credentials</h4>
+    </ai-dialog-header>
+    <ai-dialog-body>
+
+      <form class="form-horizontal" role="form" submit.delegate="signup()">
+        <div class="form-group">
+          <label class="col-lg-12 col-md-12 col-sm-12 col-xs-12" for="name">Full name:</label>
+          <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <input value.bind="name" type="text" class="form-control" id="name" placeholder="Enter your full name">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-lg-12 col-md-12 col-sm-12 col-xs-12" for="email">Email:</label>
+          <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <input value.bind="email" type="email" class="form-control" id="email" placeholder="Enter your email">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-lg-12 col-md-12 col-sm-12 col-xs-12" for="pwd">Password:</label>
+          <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <input value.bind="password" type="password" class="form-control" id="pwd" placeholder="Enter password">
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <button type="submit" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 btn btn-default btn-lg">
+              <i class="fa fa-user-plus" aria-hidden="true"></i>
+              <span>Signup</span>  
+            </button>
+          </div>
+        </div>
+      </form>
+    </ai-dialog-body>
+  </ai-dialog>
+</template>

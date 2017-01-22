@@ -23,7 +23,7 @@ router.post('/login', function(req, res, next) {
     var token = signToken(user._id, user.role);
     // TODO: add Secure; for prod!
     res.cookie('access_token', token, { httpOnly: true /*, secure: true */});
-    res.json({ access_token: token });
+    res.json({ access_token: token, user_id: user._id, user_role: user.role, });
   })(req, res, next);
 });
 
