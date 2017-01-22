@@ -3,16 +3,16 @@
     <div if.bind="!deleted" class="question">
         <!-- Headline -->
         <div class="row">
-            <div class="col-lg-10 col-md-10 col-sm-8 col-xs-8 question-clickable question-headline"> <a route-href="route: question-details; params.bind: { id: content._id }">${content.headline}</a></div>
+            <div class="col-lg-10 col-md-8 col-sm-8 col-xs-12 question-clickable question-headline"> <a route-href="route: question-details; params.bind: { id: content._id }">${content.headline}</a></div>
             <!--if.bind="cuser.isLogedIn && content.createdByUserId == cuser.id"-->
-            <div class="col-lg-2 col-md-2 col-sm-4 col-xs-4 question-admin">
+            <div class="col-lg-2 col-md-4 col-sm-4 col-xs-12 question-admin">
                 <button if.bind="authorized" class="btn btn-warning btn-xs">
                     <i class="fa fa-pencil" aria-hidden="true"></i>
                 </button>
                 <button if.bind="authorized" class="btn btn-danger btn-xs" click.trigger="delete()">
                     <i class="fa fa-trash" aria-hidden="true"></i>
                 </button>
-                <button if.bind="authenticated" class="btn btn-info btn-xs" click.trigger="pin()">
+                <button if.bind="authenticated && !authorized" class="btn btn-info btn-xs" click.trigger="pin()">
                     <i class="fa fa-thumb-tack" style="color: ${pinned ? 'black': 'white'}" aria-hidden="true"></i>
                 </button>
             </div>
@@ -27,22 +27,22 @@
         </div>
         <!-- Tags and Domain -->
         <div class="row">
-            <div class="col-lg-8 col-md-8 col-sm-8 col-xs-12 question-tags">
+            <div class="col-lg-8 col-md-8 col-sm-6 col-xs-12 question-tags">
                 <i class="fa fa-tags" aria-hidden="true"></i>
                 <span style="color: #999" if.bind="content.TagQuestions.length === 0"><i>(No tags attached)</i></span>
                 <span repeat.for="tag of content.TagQuestions"> <span class="tag tag-pill"> ${tag.TagText} </span></span>
             </div>
-            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 question-domain">
-               <div class="col-xs-12"> <i>Some domain</i></div>
+            <div class="col-lg-4 col-md-4 col-sm-6 col-xs-12 question-domain">
+               <div class="col-xs-12"> <i>${content.DomainText}</i></div>
             </div>
         </div>
         <div class="row">
-            <div class="col-lg-8 col-md-8 col-sm-8 col-xs-12">
-                <button if.bind="authenticated" class="btn btn-info btn-xs" data-toggle="collapse" data-target="#quick-answer-${content._id}"><i class="fa fa-pencil" aria-hidden="true"></i><span> Answer</span> <span class="badge">${content.Answers.length}</span></button>
-                <button if.bind="authenticated" class="btn btn-success btn-xs"><i class="fa fa-thumbs-o-up" aria-hidden="true"></i> <span class="badge">${content.positiveVotes}</span></button>
-                <button if.bind="authenticated" class="btn btn-danger btn-xs"><i class="fa fa-thumbs-o-down" aria-hidden="true"></i> <span class="badge">${content.positiveVotes}</span></button>
+            <div class="col-lg-8 col-md-8 col-sm-6 col-xs-12">
+                    <button if.bind="authenticated" class="btn btn-default btn-xs col-sm-12 col-xs-4 col-md-4" data-toggle="collapse" data-target="#quick-answer-${content._id}"><i class="fa fa-pencil" aria-hidden="true"></i><span> Answer</span> <span>${content.Answers.length}</span></button>
+                    <button if.bind="authenticated" class="btn btn-default btn-xs col-sm-6 col-xs-4 col-md-4"><i class="fa fa-thumbs-o-up" aria-hidden="true"></i> <span>${content.positiveVotes}</span></button>
+                    <button if.bind="authenticated" class="btn btn-default btn-xs col-sm-6 col-xs-4 col-md-4" style="color:red"><i class="fa fa-thumbs-o-down" aria-hidden="true"></i> <span>${content.positiveVotes}</span></button>
             </div>
-            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 question-user">
+            <div class="col-lg-4 col-md-4 col-sm-6 col-xs-12 question-user">
                 <div class="col-xs-12">${content.createdAt | dateFormat}</div>  
                 <div class="col-xs-12"><i class="fa fa-user-circle-o" aria-hidden="true"></i><i>someuser@mail.com</i></div>
             </div>

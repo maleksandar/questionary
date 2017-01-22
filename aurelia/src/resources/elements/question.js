@@ -19,6 +19,13 @@ export class Question {
     this.ea = ea;
   }
 
+  attached() {
+    this.httpClient.fetch(`pins/question/${this.content._id}`)
+      .then(response => response.json())
+      .then(pinned => { this.pinned = pinned; } )
+      .catch(reson => console.log(reason));
+  }
+
   quickAnswer() {
     this.httpClient.fetch('answers', { method: 'post', body: json({ text: this.answerText, QuestionId: this.content._id }) })
       .then(() => {
@@ -44,6 +51,10 @@ export class Question {
   }
 
   pin() {
+    if(!this.pinned)
+      this.httpClient.fetch(`pins/question/${this.content._id}`, { method: 'post' });
+    if(this.pinned)
+      this.httpClient.fetch(`pins/question/${this.content._id}`, { method: 'delete' });
     this.pinned = !this.pinned;
   }
   

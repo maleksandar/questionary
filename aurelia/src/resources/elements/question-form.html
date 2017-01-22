@@ -1,33 +1,26 @@
 <template>
   <require from="toastr/build/toastr.min.css"></require>
-  <div class="col-sm-offset-4 col-sm-8"><button class="btn btn-default" data-toggle="collapse" data-target=".questionForm">Ask a Question</button></div>
-  <div class="questionForm collapse row">
-    <h3 class="col-sm-offset-4 col-sm-8">Ask your question</h3>
-  </div>
-  <form class="questionForm collapse form-horizontal" role="form" submit.delegate="postQuestion()">
+  <div><button class="btn btn-default" data-toggle="collapse" data-target=".questionForm">Ask a Question</button></div>
+  <form class="questionForm collapse" role="form" submit.delegate="postQuestion()">
+    <h3>Ask your question</h3>
     <div class="form-group">
-      <label class="control-label col-sm-4 col-xs-12" for="email">Headline:</label>
-      <div class="col-sm-8 col-xs-12">
-        <input value.bind="headline" required type="text" class="form-control" name="headline" placeholder="Enter the headline of your question">
-      </div>
+      <labelfor="headline">Headline:</label>
+      <input value.bind="headline" required type="text" class="form-control" name="headline" placeholder="Enter the headline of your question">
     </div>
     <div class="form-group">
-      <label class="control-label col-sm-4 col-xs-12" for="pwd">Text:</label>
-      <div class="col-sm-8 col-xs-12">
-        <textarea value.bind="text" class="form-control" rows="7" name="text" placeholder="Enter the text of your question"></textarea>
-      </div>
+      <labelfor="text">Text:</label>
+      <textarea value.bind="text" class="form-control" rows="7" name="text" placeholder="Enter the text of your question"></textarea>
     </div>
     <div class="form-group">
-      <div show.bind="serverError" class="col-sm-offset-4 col-sm-8 col-xs-12 alert alert-danger">
+      <div show.bind="serverError" class="alert alert-danger">
         <p><i class="fa fa-exclamation" aria-hidden="true"></i> <strong> Error: </strong> Some kind of a server error! </p>
       </div>
     </div>
     <div class="form-group">
-      <div class="col-sm-offset-4 col-sm-8 col-xs-12">
         <div>
-          &nbsp;<span repeat.for="tag of tags"> <span class="tag tag-pill"> ${tag} <i click.trigger="removeTag(tag)" class="fa fa-times" aria-hidden="true"></i></span> </span>
+          &nbsp;<span repeat.for="tag of tags"> <span class="tag tag-pill"> ${tag} <i click.trigger="removeTag(tag)" class="fa fa-times" aria-hidden="true"></i></span>          </span>
         </div>
-        <div class="col-sm-4 col-xs-8 input-group">
+        <div class="input-group">
           <input type="text" class="form-control" name="tag" placeholder="Add tag:" value.bind="tag">
           <div class="input-group-btn">
             <button class="btn btn-primary" click.trigger="addTag()"> 
@@ -36,7 +29,14 @@
             </button>
           </div>
         </div>
-      </div>
+    </div>
+    <div class="form-group">
+        <div class="input-group">
+          <label for="doman"> Domain: </label>
+          <select value.bind="domain" name="domain" class="form-control" data-live-search="true" style="height: 34px">
+            <option repeat.for="domainOption of domains" model.bind="domainOption">${domainOption.text}</option>
+          </select>
+        </div>
     </div>
     <div class="form-group">
       <div class="col-sm-offset-4 col-sm-8">

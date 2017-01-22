@@ -209,6 +209,17 @@ define('dialogs/signup',['exports', 'aurelia-framework', 'aurelia-fetch-client',
     return Signup;
   }()) || _class);
 });
+define('resources/index',['exports'], function (exports) {
+                        'use strict';
+
+                        Object.defineProperty(exports, "__esModule", {
+                                                value: true
+                        });
+                        exports.configure = configure;
+                        function configure(config) {
+                                                config.globalResources(['./elements/question-list', './elements/question-form', './elements/question-filter']);
+                        }
+});
 define('pages/home',['exports', '../services/auth', 'aurelia-framework'], function (exports, _auth, _aureliaFramework) {
   'use strict';
 
@@ -320,17 +331,6 @@ define('pages/questions',["exports"], function (exports) {
   var Questions = exports.Questions = function Questions() {
     _classCallCheck(this, Questions);
   };
-});
-define('resources/index',['exports'], function (exports) {
-  'use strict';
-
-  Object.defineProperty(exports, "__esModule", {
-    value: true
-  });
-  exports.configure = configure;
-  function configure(config) {
-    config.globalResources(['./elements/question-list', './elements/question-form']);
-  }
 });
 define('services/auth',['exports', 'aurelia-framework', 'aurelia-fetch-client', 'aurelia-router'], function (exports, _aureliaFramework, _aureliaFetchClient, _aureliaRouter) {
   'use strict';
@@ -549,30 +549,39 @@ define('resources/elements/question-form',['exports', 'aurelia-fetch-client', 'a
 
   var QuestionForm = exports.QuestionForm = (_dec = (0, _aureliaFramework.inject)(_aureliaFetchClient.HttpClient, toastr), _dec(_class = function () {
     function QuestionForm(httpClient, toastr) {
+      var _this = this;
+
       _classCallCheck(this, QuestionForm);
 
       this.httpClient = httpClient;
       this.toastr = toastr;
       this.tags = [];
       this.tag = "";
+      this.httpClient.fetch('domains').then(function (response) {
+        return response.json();
+      }).then(function (domains) {
+        _this.domains = domains;console.log("Domains:", _this.domains);
+      }).catch(function (reason) {
+        console.log(reason);
+      });
     }
 
     QuestionForm.prototype.postQuestion = function postQuestion() {
-      var _this = this;
+      var _this2 = this;
 
       var tagObjects = this.tags.map(function (tag) {
         return { text: tag };
       });
       return this.httpClient.fetch('questions', {
         method: 'post',
-        body: (0, _aureliaFetchClient.json)({ headline: this.headline, text: this.text, Tags: tagObjects })
+        body: (0, _aureliaFetchClient.json)({ headline: this.headline, text: this.text, Tags: tagObjects, DomainText: this.domain.text })
       }).then(function () {
-        _this.toastr.success('You have successfully posted your question');
-        _this.headline = "";
-        _this.text = "";
-        _this.tags = [];
+        _this2.toastr.success('You have successfully posted your question');
+        _this2.headline = "";
+        _this2.text = "";
+        _this2.tags = [];
       }).catch(function () {
-        return _this.serverError = true;
+        return _this2.serverError = true;
       });
     };
 
@@ -652,18 +661,29 @@ define('resources/elements/question-list',['exports', 'aurelia-framework', 'aure
 
   var QuestionList = exports.QuestionList = (_dec = (0, _aureliaFramework.inject)(_aureliaFetchClient.HttpClient), _dec(_class = (_class2 = function () {
     function QuestionList(httpClient) {
-      var _this = this;
-
       _classCallCheck(this, QuestionList);
 
-      _initDefineProp(this, 'value', _descriptor, this);
+      _initDefineProp(this, 'source', _descriptor, this);
 
       this.httpClient = httpClient;
       this.qss = [];
       this.pageIndexes = [];
       this.qssIsNotEmpty = false;
+    }
 
-      this.httpClient.fetch('questions?include=Answers&include=Tags').then(function (response) {
+    QuestionList.prototype.attached = function attached() {
+      var _this = this;
+
+      var request = '';
+      if (this.source === 'pinned') {
+        request = 'questions/pinned';
+      } else if (this.source === 'mine') {
+        request = 'questions/mine';
+      } else {
+        request = 'questions?include=Answers&include=Tags';
+      }
+      console.log('QS: ', this.source);
+      this.httpClient.fetch(request).then(function (response) {
         return response.json();
       }).then(function (questions) {
         _this.questions = questions;
@@ -678,18 +698,10 @@ define('resources/elements/question-list',['exports', 'aurelia-framework', 'aure
           });
         }
       });
-    }
-
-    QuestionList.prototype.valueChanged = function valueChanged(newValue, oldValue) {
-      this.questions = this.qss[newValue];
-    };
-
-    QuestionList.prototype.setPage = function setPage(index) {
-      this.currentIndex = index;
     };
 
     return QuestionList;
-  }(), (_descriptor = _applyDecoratedDescriptor(_class2.prototype, 'value', [_aureliaFramework.bindable], {
+  }(), (_descriptor = _applyDecoratedDescriptor(_class2.prototype, 'source', [_aureliaFramework.bindable], {
     enumerable: true,
     initializer: null
   })), _class2)) || _class);
@@ -784,32 +796,46 @@ define('resources/elements/question',['exports', 'aurelia-framework', 'aurelia-f
       this.ea = ea;
     }
 
-    Question.prototype.quickAnswer = function quickAnswer() {
+    Question.prototype.attached = function attached() {
       var _this = this;
 
+      this.httpClient.fetch('pins/question/' + this.content._id).then(function (response) {
+        return response.json();
+      }).then(function (pinned) {
+        _this.pinned = pinned;
+      }).catch(function (reson) {
+        return console.log(reason);
+      });
+    };
+
+    Question.prototype.quickAnswer = function quickAnswer() {
+      var _this2 = this;
+
       this.httpClient.fetch('answers', { method: 'post', body: (0, _aureliaFetchClient.json)({ text: this.answerText, QuestionId: this.content._id }) }).then(function () {
-        _this.answerText = "";
-        _this.content.Answers.push({});
-        _this.ea.publish('questionAnswered', { id: _this.content._id });
-        _this.toastr.success('You have successfully posted your answer');
+        _this2.answerText = "";
+        _this2.content.Answers.push({});
+        _this2.ea.publish('questionAnswered', { id: _this2.content._id });
+        _this2.toastr.success('You have successfully posted your answer');
       });
     };
 
     Question.prototype.delete = function _delete() {
-      var _this2 = this;
+      var _this3 = this;
 
       this.dialogService.open({ viewModel: _confirmationDialog.ConfirmationDialog, model: { headline: "Delete question", message: "Are you sure you want to delete this question?" } }).then(function (response) {
         if (!response.wasCancelled) {
           console.log(response);
-          _this2.httpClient.fetch('questions/' + _this2.content._id, { method: 'delete' }).then(function () {
-            _this2.toastr.success('You have successfully deleted your question');
-            _this2.deleted = true;
+          _this3.httpClient.fetch('questions/' + _this3.content._id, { method: 'delete' }).then(function () {
+            _this3.toastr.success('You have successfully deleted your question');
+            _this3.deleted = true;
           });
         }
       });
     };
 
     Question.prototype.pin = function pin() {
+      if (!this.pinned) this.httpClient.fetch('pins/question/' + this.content._id, { method: 'post' });
+      if (this.pinned) this.httpClient.fetch('pins/question/' + this.content._id, { method: 'delete' });
       this.pinned = !this.pinned;
     };
 
@@ -1581,17 +1607,35 @@ define('aurelia-dialog/dialog-service',['exports', 'aurelia-metadata', 'aurelia-
     }
   }
 });
-define('text!app.html', ['module'], function(module) { module.exports = "<template>\r\n  <require from=\"bootstrap/css/bootstrap.css\"></require>\r\n  <require from=\"./styles.css\"></require>\r\n<nav class=\"navbar navbar-inverse\">\r\n  <div class=\"container-fluid\">\r\n    <div class=\"navbar-header\">\r\n      <button type=\"button\" class=\"navbar-toggle\" data-toggle=\"collapse\" data-target=\"#myNavbar\">\r\n        <span class=\"icon-bar\"></span>\r\n        <span class=\"icon-bar\"></span>\r\n        <span class=\"icon-bar\"></span>                        \r\n      </button>\r\n      <a class=\"navbar-brand\" href=\"#\">Questionary</a>\r\n    </div>\r\n    <div class=\"collapse navbar-collapse\" id=\"myNavbar\">\r\n      <ul class=\"nav navbar-nav\">\r\n        <li><a if.bind=\"auth.isLogedIn\" href=\"/#/home\"><span class=\"fa fa-home\"></span>Home</a></li>\r\n        <li><a href=\"#\">About</a></li>\r\n      </ul>\r\n      <form class=\"navbar-form navbar-left\">\r\n        <div class=\"input-group\">\r\n          <div class=\"form-group\">\r\n            <input type=\"text\" class=\"form-control\" placeholder=\"Search\">\r\n          </div>\r\n          <div class=\"input-group-btn\">\r\n            <button type=\"submit\" class=\"btn btn-default\">Submit</button>\r\n          </div>\r\n        </div>\r\n      </form>\r\n      <ul class=\"nav navbar-nav navbar-right\">\r\n        <li><a if.bind=\"!auth.isLogedIn\" href=\"#\" click.trigger=\"signupModal()\"><span class=\"fa fa-user\"></span> Sign Up</a></li>\r\n        <li><a if.bind=\"!auth.isLogedIn\" href=\"#\" click.trigger=\"loginModal()\"><span class=\"fa fa-sign-in\"></span> Login</a></li>\r\n        <li><a if.bind=\"auth.isLogedIn\" href=\"#\" click.trigger=\"auth.logout()\"><span class=\"fa fa-sign-out\"></span> Logout</a></li>\r\n      </ul>\r\n    </div>\r\n  </div>\r\n</nav>\r\n      <router-view class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\"></router-view>\r\n  </div>\r\n</template>\r\n"; });
-define('text!styles.css', ['module'], function(module) { module.exports = "section {\r\n  margin: 0 20px;\r\n}\r\n\r\na:focus {\r\n  outline: none;\r\n}\r\n\r\n.navbar-nav li.loader {\r\n    margin: 12px 24px 0 6px;\r\n}\r\n\r\n.no-selection {\r\n  margin: 20px;\r\n}\r\n\r\n.contact-list {\r\n  overflow-y: auto;\r\n  border: 1px solid #ddd;\r\n  padding: 10px;\r\n}\r\n\r\n.panel {\r\n  margin: 20px;\r\n}\r\n\r\n.button-bar {\r\n  right: 0;\r\n  left: 0;\r\n  bottom: 0;\r\n  border-top: 1px solid #ddd;\r\n  background: white;\r\n}\r\n\r\n.button-bar > button {\r\n  float: right;\r\n  margin: 20px;\r\n}\r\n\r\nli.list-group-item {\r\n  list-style: none;\r\n}\r\n\r\nli.list-group-item > a {\r\n  text-decoration: none;\r\n}\r\n\r\nli.list-group-item.active > a {\r\n  color: white;\r\n}\r\n\r\n.question {\r\n    background-color: #eee;\r\n    border-radius: 7px;\r\n    /*box-shadow: 2px 2px 2px 2px #eee;*/\r\n    border: 1px solid #eee;\r\n    color: #333;\r\n    text-align: left;\r\n    margin-bottom: 35px;\r\n}\r\n\r\n.question-clickable:hover {\r\n    color: dodgerblue;\r\n    cursor: pointer;\r\n}\r\n\r\n.question-text {\r\n    color: #333;\r\n    background-color: white;\r\n    text-align: start;\r\n}\r\n.tag-pill{\r\n    background-color: #888;\r\n}\r\n.question-text {\r\n    font-family: \"Arial\";\r\n    font-size: 16px;\r\n    white-space: pre-line;\r\n    height: 100%;\r\n}\r\n\r\n.question-headline {\r\n    font-size: 22px;\r\n    font-weight: bold;\r\n}\r\n\r\n.question-answers {\r\n    background-color: #444444;\r\n    color: #F2DEDE;\r\n}\r\n\r\n.question-tags {\r\n    /*background-color: #eee;*/\r\n    padding-bottom: 10px;\r\n    text-align: left;\r\n}\r\n\r\n.question-user {\r\n    font-style: italic;\r\n    font-size: 13px;\r\n    text-align: right;\r\n}\r\n\r\n.question-domain {\r\n    font-style: italic;\r\n    font-size: 13px;\r\n    text-align: right;\r\n}\r\n\r\n.question-admin {\r\n    text-align: right;\r\n}\r\n\r\n.question-trash {\r\n    background-color: #222222;\r\n    color: #FF3333;\r\n}\r\n\r\n.question-trash:hover {\r\n    background-color: #FF3333;\r\n    color: #222222;\r\n    cursor: pointer;\r\n}\r\n\r\n.question-pencil {\r\n    background-color: #222222;\r\n    color: #FFFF66;\r\n}\r\n\r\n.question-pencil:hover {\r\n    background-color: #FFFF66;\r\n    color: #222222;\r\n    cursor: pointer;\r\n}\r\n\r\n.votes-plus {\r\n    background-color: #DFF0D8;\r\n    color: seagreen;\r\n}\r\n\r\n.votes-minus {\r\n    background-color: #F2DEDE;\r\n    color: darkred; \r\n}\r\n\r\nai-dialog-overlay.active {\r\n  background-color: black;\r\n  opacity: .5;\r\n}"; });
+define('resources/elements/question-filter',["exports"], function (exports) {
+  "use strict";
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  function _classCallCheck(instance, Constructor) {
+    if (!(instance instanceof Constructor)) {
+      throw new TypeError("Cannot call a class as a function");
+    }
+  }
+
+  var QuestionFilter = exports.QuestionFilter = function QuestionFilter() {
+    _classCallCheck(this, QuestionFilter);
+  };
+});
+define('text!app.html', ['module'], function(module) { module.exports = "<template>\r\n  <require from=\"bootstrap/css/bootstrap.css\"></require>\r\n  <require from=\"./styles.css\"></require>\r\n<nav class=\"navbar navbar-inverse navbar-fixed-top\">\r\n  <div class=\"container-fluid\">\r\n    <div class=\"navbar-header\">\r\n      <button type=\"button\" class=\"navbar-toggle\" data-toggle=\"collapse\" data-target=\"#myNavbar\">\r\n        <span class=\"icon-bar\"></span>\r\n        <span class=\"icon-bar\"></span>\r\n        <span class=\"icon-bar\"></span>                        \r\n      </button>\r\n      <a class=\"navbar-brand\" href=\"#\">Questionary</a>\r\n    </div>\r\n    <div class=\"collapse navbar-collapse\" id=\"myNavbar\">\r\n      <ul class=\"nav navbar-nav\">\r\n        <li><a if.bind=\"auth.isLogedIn\" href=\"/#/home\"><span class=\"fa fa-home\"></span>Home</a></li>\r\n        <li><a href=\"#\">About</a></li>\r\n      </ul>\r\n      <form class=\"navbar-form navbar-left\">\r\n        <div class=\"input-group\">\r\n          <div class=\"form-group\">\r\n            <input type=\"text\" class=\"form-control\" placeholder=\"Search\">\r\n          </div>\r\n          <div class=\"input-group-btn\">\r\n            <button type=\"submit\" class=\"btn btn-default\">Submit</button>\r\n          </div>\r\n        </div>\r\n      </form>\r\n      <ul class=\"nav navbar-nav navbar-right\">\r\n        <li><a if.bind=\"!auth.isLogedIn\" href=\"#\" click.trigger=\"signupModal()\"><span class=\"fa fa-user\"></span> Sign Up</a></li>\r\n        <li><a if.bind=\"!auth.isLogedIn\" href=\"#\" click.trigger=\"loginModal()\"><span class=\"fa fa-sign-in\"></span> Login</a></li>\r\n        <li><a if.bind=\"auth.isLogedIn\" href=\"#\" click.trigger=\"auth.logout()\"><span class=\"fa fa-sign-out\"></span> Logout</a></li>\r\n      </ul>\r\n    </div>\r\n  </div>\r\n</nav>\r\n      <div class='router-view'>\r\n        <router-view class=\"col-md-12 col-xs-12 col-sm-12 col-lg-12\"></router-view>\r\n      </div>\r\n  </div>\r\n</template>\r\n"; });
+define('text!styles.css', ['module'], function(module) { module.exports = "section {\r\n  margin: 0 20px;\r\n}\r\n\r\na:focus {\r\n  outline: none;\r\n}\r\n\r\n.navbar-nav li.loader {\r\n    margin: 12px 24px 0 6px;\r\n}\r\n\r\n.no-selection {\r\n  margin: 20px;\r\n}\r\n\r\n.contact-list {\r\n  overflow-y: auto;\r\n  border: 1px solid #ddd;\r\n  padding: 10px;\r\n}\r\n\r\n.panel {\r\n  margin: 20px;\r\n}\r\n\r\n.button-bar {\r\n  right: 0;\r\n  left: 0;\r\n  bottom: 0;\r\n  border-top: 1px solid #ddd;\r\n  background: white;\r\n}\r\n\r\n.button-bar > button {\r\n  float: right;\r\n  margin: 20px;\r\n}\r\n\r\nli.list-group-item {\r\n  list-style: none;\r\n}\r\n\r\nli.list-group-item > a {\r\n  text-decoration: none;\r\n}\r\n\r\nli.list-group-item.active > a {\r\n  color: white;\r\n}\r\n\r\n.question {\r\n    background-color: #eee;\r\n    border-radius: 7px;\r\n    /*box-shadow: 2px 2px 2px 2px #eee;*/\r\n    border: 1px solid #eee;\r\n    color: #333;\r\n    text-align: left;\r\n    margin-bottom: 35px;\r\n}\r\n\r\n.question-clickable:hover {\r\n    color: dodgerblue;\r\n    cursor: pointer;\r\n}\r\n\r\n.question-text {\r\n    color: #333;\r\n    background-color: white;\r\n    text-align: start;\r\n}\r\n.tag-pill{\r\n    background-color: #888;\r\n}\r\n.question-text {\r\n    font-family: \"Arial\";\r\n    font-size: 16px;\r\n    white-space: pre-line;\r\n    height: 100%;\r\n}\r\n\r\n.question-headline {\r\n    font-size: 22px;\r\n    font-weight: bold;\r\n}\r\n\r\n.question-answers {\r\n    background-color: #444444;\r\n    color: #F2DEDE;\r\n}\r\n\r\n.question-tags {\r\n    /*background-color: #eee;*/\r\n    padding-bottom: 10px;\r\n    text-align: left;\r\n}\r\n\r\n.question-user {\r\n    font-style: italic;\r\n    font-size: 13px;\r\n    text-align: right;\r\n}\r\n\r\n.question-domain {\r\n    font-style: italic;\r\n    font-size: 13px;\r\n    text-align: right;\r\n}\r\n\r\n.question-admin {\r\n    text-align: right;\r\n}\r\n\r\n.question-trash {\r\n    background-color: #222222;\r\n    color: #FF3333;\r\n}\r\n\r\n.question-trash:hover {\r\n    background-color: #FF3333;\r\n    color: #222222;\r\n    cursor: pointer;\r\n}\r\n\r\n.question-pencil {\r\n    background-color: #222222;\r\n    color: #FFFF66;\r\n}\r\n\r\n.question-pencil:hover {\r\n    background-color: #FFFF66;\r\n    color: #222222;\r\n    cursor: pointer;\r\n}\r\n\r\n.votes-plus {\r\n    background-color: #DFF0D8;\r\n    color: seagreen;\r\n}\r\n\r\n.votes-minus {\r\n    background-color: #F2DEDE;\r\n    color: darkred; \r\n}\r\n\r\nai-dialog-overlay.active {\r\n  background-color: black;\r\n  opacity: .5;\r\n}\r\n\r\n.router-view {\r\n  margin-top: 80px;\r\n}"; });
 define('text!dialogs/login.html', ['module'], function(module) { module.exports = "<template>\r\n  <ai-dialog>\r\n    <ai-dialog-header>\r\n      <button type=\"button\" class=\"close\" click.trigger=\"dialogController.cancel()\">&times;</button>\r\n      <h4 class=\"modal-title\">Log in</h4>\r\n    </ai-dialog-header>\r\n    <ai-dialog-body>\r\n      <form class=\"form-horizontal\" role=\"form\" submit.delegate=\"login()\">\r\n        <div class=\"form-group\">\r\n          <label class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\" for=\"email\">Email:</label>\r\n          <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n            <input value.bind=\"email\" required type=\"email\" class=\"form-control\" id=\"email\" placeholder=\"Enter your email\">\r\n          </div>\r\n        </div>\r\n        <div class=\"form-group\">\r\n          <label class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\" for=\"pwd\">Password:</label>\r\n          <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n            <input value.bind=\"password\" required type=\"password\" class=\"form-control\" id=\"pwd\" placeholder=\"Enter your password\">\r\n          </div>\r\n        </div>\r\n        <div class=\"form-group\">\r\n          <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n            <div class=\"checkbox\">\r\n              <label><input type=\"checkbox\"> Remember me</label>\r\n            </div>\r\n          </div>\r\n        </div>\r\n        <div class=\"form-group\">\r\n          <div show.bind=\"loginError\" class=\"col-lg-offset-2 col-lg-6 col-md-offset-2 col-md-6 col-sm-offset-3 col-sm-6 alert alert-danger\">\r\n            <p><i class=\"fa fa-exclamation\" aria-hidden=\"true\"></i> <strong> Error: </strong> Email or password you provided\r\n              do not match with any existing user</p>\r\n          </div>\r\n        </div>\r\n        <div class=\"form-group\">\r\n          <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n            <button type=\"submit\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12 btn btn-default btn-lg\">\r\n              <i class=\"fa fa-sign-in\" aria-hidden=\"true\"></i>\r\n              <span>Log in</span>\r\n            </button>\r\n          </div>\r\n        </div>\r\n      </form>\r\n    </ai-dialog-body>\r\n  </ai-dialog>\r\n</template>"; });
 define('text!dialogs/signup.html', ['module'], function(module) { module.exports = "<template>\r\n  <ai-dialog>\r\n    <ai-dialog-header>\r\n      <button type=\"button\" class=\"close\" click.trigger=\"dialogController.cancel()\">&times;</button>\r\n      <h4 class=\"modal-title\">Sign up with your credentials</h4>\r\n    </ai-dialog-header>\r\n    <ai-dialog-body>\r\n\r\n      <form class=\"form-horizontal\" role=\"form\" submit.delegate=\"signup()\">\r\n        <div class=\"form-group\">\r\n          <label class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\" for=\"name\">Full name:</label>\r\n          <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n            <input value.bind=\"name\" required type=\"text\" class=\"form-control\" id=\"name\" placeholder=\"Enter your full name\">\r\n          </div>\r\n        </div>\r\n        <div class=\"form-group\">\r\n          <label class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\" for=\"email\">Email:</label>\r\n          <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n            <input value.bind=\"email\" required type=\"email\" class=\"form-control\" id=\"email\" placeholder=\"Enter your email\">\r\n          </div>\r\n        </div>\r\n        <div class=\"form-group\">\r\n          <label class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\" for=\"pwd\">Password:</label>\r\n          <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n            <input value.bind=\"password\" required type=\"password\" class=\"form-control\" id=\"pwd\" placeholder=\"Enter password\">\r\n          </div>\r\n        </div>\r\n        <div class=\"form-group\">\r\n          <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n            <button type=\"submit\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12 btn btn-default btn-lg\">\r\n              <i class=\"fa fa-user-plus\" aria-hidden=\"true\"></i>\r\n              <span>Signup</span>  \r\n            </button>\r\n          </div>\r\n        </div>\r\n      </form>\r\n    </ai-dialog-body>\r\n  </ai-dialog>\r\n</template>"; });
-define('text!pages/home.html', ['module'], function(module) { module.exports = "<template>\r\n      <div class=\"col-lg-offset-4 col-md-offset-4  col-lg-8 col-md-8 col-sm-12 col-xs-12\">\r\n      <div if.bind=\"qssIsNotEmpty\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\" repeat.for=\"question of qss[currentIndex]\">\r\n        <question content.bind=\"question\"></question>\r\n      </div>\r\n      <div class=\"row\">\r\n        <div if.bind=\"qssIsNotEmpty\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\" style=\"text-align: center;\">\r\n          <ul class=\"pagination pagination\" repeat.for=\"index of pageIndexes\">\r\n            <li class=\"${currentIndex == index? 'active':''}\">\r\n              <a click.delegate=\"setPage(index)\" href=\"#\">${index+1}</a>\r\n            </li>\r\n          </ul>\r\n        </div>\r\n      </div>\r\n    </div>\r\n<question-form></question-form>\r\n</template>\r\n"; });
+define('text!pages/home.html', ['module'], function(module) { module.exports = "<template>\r\n  <div class=\"row\">\r\n    <question-form class='col-md-6'></question-form>\r\n  </div>\r\n  <div class='row'>\r\n    <div class='col-md-6'>\r\n      <h4>Your Questions:</h4>\r\n      <question-list source.bind='\"mine\"'></question-list>\r\n    </div>\r\n    <div class='col-md-6'>\r\n      <h4>Pinned Questions:</h4>\r\n      <question-list source.bind='\"pinned\"'></question-list>\r\n    </div>\r\n  </div>\r\n</template>"; });
 define('text!pages/question-details.html', ['module'], function(module) { module.exports = "<template>\r\n  <require from=\"../resources/elements/question\"></require>\r\n  <require from=\"../resources/elements/answer\"></require>\r\n\r\n  <question content.bind=\"questionContent\"></question>\r\n  <div>\r\n    <div repeat.for=\"answer of answers\">\r\n      <answer content.bind=\"answer\"></answer>\r\n    </div>\r\n  </div>\r\n</template>"; });
-define('text!pages/questions.html', ['module'], function(module) { module.exports = "<template>\r\n  <question-list></question-list>\r\n</template>"; });
+define('text!pages/questions.html', ['module'], function(module) { module.exports = "<template>\r\n  <div class=\"row\">\r\n    <question-filter class =\"col-xs-12 col-sm-4 col-md-4 col-lg-4\"></question-filter>\r\n    <div class =\"col-xs-12 col-sm-8 col-md-8 col-lg-8\">\r\n      <h4> Filtered Questions: </h4>\r\n      <question-list></question-list>\r\n    </div>\r\n  </div>\r\n</template>"; });
 define('text!resources/elements/answer.html', ['module'], function(module) { module.exports = "<template>\r\n  <div class=\"well\">\r\n    <div>\r\n      <div class=\"well\">\r\n        <div class=\"answer-text\">${content.text}</div>\r\n      </div>\r\n    </div>\r\n\r\n    <div class=\"row\">\r\n      <div class=\"col-lg-8 col-md-8 col-sm-8 col-xs-12\">\r\n        <button if.bind=\"authorized\" class=\"btn btn-danger btn-xs\"><i class=\"fa fa-trash\" aria-hidden=\"true\"></i> <span> Delete </span></button>\r\n        <button if.bind=\"authenticated && !authorized\" class=\"btn btn-success btn-xs\"><i class=\"fa fa-thumbs-o-up\" aria-hidden=\"true\"></i> <span class=\"badge\">${content.positiveVotes}</span></button>\r\n        <button if.bind=\"authenticated && !authorized\" class=\"btn btn-danger btn-xs\"><i class=\"fa fa-thumbs-o-down\" aria-hidden=\"true\"></i> <span class=\"badge\">${content.positiveVotes}</span></button>\r\n      </div>\r\n      <div class=\"col-lg-4 col-md-4 col-sm-4 col-xs-12 question-user\">\r\n        <i class=\"fa fa-user-circle-o\" aria-hidden=\"true\"></i> <i>someuser@mail.com</i>\r\n      </div>\r\n    </div>\r\n  </div>\r\n</template>"; });
 define('text!resources/elements/confirmation-dialog.html', ['module'], function(module) { module.exports = "<template>\r\n  <ai-dialog>\r\n    <ai-dialog-header>\r\n      <h4 class=\"modal-title\"> ${headline} </h4>\r\n    </ai-dialog-header>\r\n      <ai-dialog-body>\r\n         <h2>${message}</h2>\r\n      </ai-dialog-body>\r\n      <ai-dialog-footer>\r\n         <button click.trigger = \"dialogController.cancel()\">Cancel</button>\r\n         <button click.trigger = \"dialogController.ok(message)\">Ok</button>\r\n      </ai-dialog-footer>\r\n  </ai-dialog>\r\n</template>"; });
 define('text!resources/elements/navigation-element.html', ['module'], function(module) { module.exports = "<template bindable=\"href, title, icon\">\r\n      <a class=\"navbar-brand\" href=\"${href}\">\r\n        <i class=\"${icon}\"></i>\r\n        <span>${title}</span>\r\n      </a>\r\n</template>"; });
-define('text!resources/elements/question-form.html', ['module'], function(module) { module.exports = "<template>\r\n  <require from=\"toastr/build/toastr.min.css\"></require>\r\n  <div class=\"col-sm-offset-4 col-sm-8\"><button class=\"btn btn-default\" data-toggle=\"collapse\" data-target=\".questionForm\">Ask a Question</button></div>\r\n  <div class=\"questionForm collapse row\">\r\n    <h3 class=\"col-sm-offset-4 col-sm-8\">Ask your question</h3>\r\n  </div>\r\n  <form class=\"questionForm collapse form-horizontal\" role=\"form\" submit.delegate=\"postQuestion()\">\r\n    <div class=\"form-group\">\r\n      <label class=\"control-label col-sm-4 col-xs-12\" for=\"email\">Headline:</label>\r\n      <div class=\"col-sm-8 col-xs-12\">\r\n        <input value.bind=\"headline\" required type=\"text\" class=\"form-control\" name=\"headline\" placeholder=\"Enter the headline of your question\">\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">\r\n      <label class=\"control-label col-sm-4 col-xs-12\" for=\"pwd\">Text:</label>\r\n      <div class=\"col-sm-8 col-xs-12\">\r\n        <textarea value.bind=\"text\" class=\"form-control\" rows=\"7\" name=\"text\" placeholder=\"Enter the text of your question\"></textarea>\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">\r\n      <div show.bind=\"serverError\" class=\"col-sm-offset-4 col-sm-8 col-xs-12 alert alert-danger\">\r\n        <p><i class=\"fa fa-exclamation\" aria-hidden=\"true\"></i> <strong> Error: </strong> Some kind of a server error! </p>\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">\r\n      <div class=\"col-sm-offset-4 col-sm-8 col-xs-12\">\r\n        <div>\r\n          &nbsp;<span repeat.for=\"tag of tags\"> <span class=\"tag tag-pill\"> ${tag} <i click.trigger=\"removeTag(tag)\" class=\"fa fa-times\" aria-hidden=\"true\"></i></span> </span>\r\n        </div>\r\n        <div class=\"col-sm-4 col-xs-8 input-group\">\r\n          <input type=\"text\" class=\"form-control\" name=\"tag\" placeholder=\"Add tag:\" value.bind=\"tag\">\r\n          <div class=\"input-group-btn\">\r\n            <button class=\"btn btn-primary\" click.trigger=\"addTag()\"> \r\n              <i class=\"fa fa-plus\" aria-hidden=\"true\"></i>\r\n              <i class=\"fa fa-tag\" aria-hidden=\"true\"></i>\r\n            </button>\r\n          </div>\r\n        </div>\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">\r\n      <div class=\"col-sm-offset-4 col-sm-8\">\r\n        <button type=\"submit\" class=\"btn btn-default\">Post question</button>\r\n      </div>\r\n    </div>\r\n  </form>\r\n</template>"; });
-define('text!resources/elements/question-list.html', ['module'], function(module) { module.exports = "<template>\r\n  <require from=\"./question\"></require>\r\n  <div if.bind=\"questions.length !== 0\" value.bind=\"currentIndex\" class=\"container-fluid\">\r\n    <div class=\"col-lg-4 col-md-4 col-sm-12 col-xs-12\">\r\n      <form action=\"\">\r\n        <div class=\"form-group\">\r\n          label <input type=\"text\" class=\"form-control\"> label <input type=\"text\" class=\"form-control\"> label <input type=\"text\"\r\n            class=\"form-control\">\r\n        </div>\r\n      </form>\r\n    </div>\r\n    <div class=\"col-lg-8 col-md-8 col-sm-12 col-xs-12\">\r\n      <div if.bind=\"qssIsNotEmpty\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\" repeat.for=\"question of qss[currentIndex]\">\r\n        <question content.bind=\"question\"></question>\r\n      </div>\r\n      <div class=\"row\">\r\n        <div if.bind=\"qssIsNotEmpty\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\" style=\"text-align: center;\">\r\n          <ul class=\"pagination pagination\" repeat.for=\"index of pageIndexes\">\r\n            <li class=\"${currentIndex == index? 'active':''}\">\r\n              <a click.delegate=\"setPage(index)\" href=\"#\">${index+1}</a>\r\n            </li>\r\n          </ul>\r\n        </div>\r\n      </div>\r\n    </div>\r\n  </div>\r\n  <div if.bind=\"questions.length === 0\">\r\n    <div class=\"jumbotron\"> Nema postavljenih pitanja</div>\r\n  </div>\r\n</template>"; });
-define('text!resources/elements/question.html', ['module'], function(module) { module.exports = "<template>\r\n    <require from=\"../value-converters/dates\"></require>\r\n    <div if.bind=\"!deleted\" class=\"question\">\r\n        <!-- Headline -->\r\n        <div class=\"row\">\r\n            <div class=\"col-lg-10 col-md-10 col-sm-8 col-xs-8 question-clickable question-headline\"> <a route-href=\"route: question-details; params.bind: { id: content._id }\">${content.headline}</a></div>\r\n            <!--if.bind=\"cuser.isLogedIn && content.createdByUserId == cuser.id\"-->\r\n            <div class=\"col-lg-2 col-md-2 col-sm-4 col-xs-4 question-admin\">\r\n                <button if.bind=\"authorized\" class=\"btn btn-warning btn-xs\">\r\n                    <i class=\"fa fa-pencil\" aria-hidden=\"true\"></i>\r\n                </button>\r\n                <button if.bind=\"authorized\" class=\"btn btn-danger btn-xs\" click.trigger=\"delete()\">\r\n                    <i class=\"fa fa-trash\" aria-hidden=\"true\"></i>\r\n                </button>\r\n                <button if.bind=\"authenticated\" class=\"btn btn-info btn-xs\" click.trigger=\"pin()\">\r\n                    <i class=\"fa fa-thumb-tack\" style=\"color: ${pinned ? 'black': 'white'}\" aria-hidden=\"true\"></i>\r\n                </button>\r\n            </div>\r\n        </div>\r\n\r\n        <div>\r\n            <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n                <div class=\"row\">\r\n                    <div class=\"question-text\">${content.text}</div>\r\n                </div>\r\n            </div>\r\n        </div>\r\n        <!-- Tags and Domain -->\r\n        <div class=\"row\">\r\n            <div class=\"col-lg-8 col-md-8 col-sm-8 col-xs-12 question-tags\">\r\n                <i class=\"fa fa-tags\" aria-hidden=\"true\"></i>\r\n                <span style=\"color: #999\" if.bind=\"content.TagQuestions.length === 0\"><i>(No tags attached)</i></span>\r\n                <span repeat.for=\"tag of content.TagQuestions\"> <span class=\"tag tag-pill\"> ${tag.TagText} </span></span>\r\n            </div>\r\n            <div class=\"col-lg-4 col-md-4 col-sm-4 col-xs-12 question-domain\">\r\n               <div class=\"col-xs-12\"> <i>Some domain</i></div>\r\n            </div>\r\n        </div>\r\n        <div class=\"row\">\r\n            <div class=\"col-lg-8 col-md-8 col-sm-8 col-xs-12\">\r\n                <button if.bind=\"authenticated\" class=\"btn btn-info btn-xs\" data-toggle=\"collapse\" data-target=\"#quick-answer-${content._id}\"><i class=\"fa fa-pencil\" aria-hidden=\"true\"></i><span> Answer</span> <span class=\"badge\">${content.Answers.length}</span></button>\r\n                <button if.bind=\"authenticated\" class=\"btn btn-success btn-xs\"><i class=\"fa fa-thumbs-o-up\" aria-hidden=\"true\"></i> <span class=\"badge\">${content.positiveVotes}</span></button>\r\n                <button if.bind=\"authenticated\" class=\"btn btn-danger btn-xs\"><i class=\"fa fa-thumbs-o-down\" aria-hidden=\"true\"></i> <span class=\"badge\">${content.positiveVotes}</span></button>\r\n            </div>\r\n            <div class=\"col-lg-4 col-md-4 col-sm-4 col-xs-12 question-user\">\r\n                <div class=\"col-xs-12\">${content.createdAt | dateFormat}</div>  \r\n                <div class=\"col-xs-12\"><i class=\"fa fa-user-circle-o\" aria-hidden=\"true\"></i><i>someuser@mail.com</i></div>\r\n            </div>\r\n            <div id=\"quick-answer-${content._id}\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12 collapse\">\r\n                <form class=\"form-horizontal\" role=\"form\" submit.delegate=\"quickAnswer()\">\r\n                    <div class=\"form-group col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n                        <label class=\"control-label\" for=\"answer\">Answer:</label>\r\n                        <textarea value.bind=\"answerText\" class=\"form-control\" rows=\"7\" name=\"answer\" placeholder=\"Enter quick answer here\"></textarea>\r\n                        <button type=\"submit\" data-toggle=\"collapse\" data-target=\"#quick-answer-${content._id}\" class=\"btn btn-default\">Post answer</button>\r\n                    </div>\r\n                </form>\r\n            </div>\r\n        </div>\r\n    </div>\r\n</template>"; });
+define('text!resources/elements/question-form.html', ['module'], function(module) { module.exports = "<template>\r\n  <require from=\"toastr/build/toastr.min.css\"></require>\r\n  <div><button class=\"btn btn-default\" data-toggle=\"collapse\" data-target=\".questionForm\">Ask a Question</button></div>\r\n  <form class=\"questionForm collapse\" role=\"form\" submit.delegate=\"postQuestion()\">\r\n    <h3>Ask your question</h3>\r\n    <div class=\"form-group\">\r\n      <labelfor=\"headline\">Headline:</label>\r\n      <input value.bind=\"headline\" required type=\"text\" class=\"form-control\" name=\"headline\" placeholder=\"Enter the headline of your question\">\r\n    </div>\r\n    <div class=\"form-group\">\r\n      <labelfor=\"text\">Text:</label>\r\n      <textarea value.bind=\"text\" class=\"form-control\" rows=\"7\" name=\"text\" placeholder=\"Enter the text of your question\"></textarea>\r\n    </div>\r\n    <div class=\"form-group\">\r\n      <div show.bind=\"serverError\" class=\"alert alert-danger\">\r\n        <p><i class=\"fa fa-exclamation\" aria-hidden=\"true\"></i> <strong> Error: </strong> Some kind of a server error! </p>\r\n      </div>\r\n    </div>\r\n    <div class=\"form-group\">\r\n        <div>\r\n          &nbsp;<span repeat.for=\"tag of tags\"> <span class=\"tag tag-pill\"> ${tag} <i click.trigger=\"removeTag(tag)\" class=\"fa fa-times\" aria-hidden=\"true\"></i></span>          </span>\r\n        </div>\r\n        <div class=\"input-group\">\r\n          <input type=\"text\" class=\"form-control\" name=\"tag\" placeholder=\"Add tag:\" value.bind=\"tag\">\r\n          <div class=\"input-group-btn\">\r\n            <button class=\"btn btn-primary\" click.trigger=\"addTag()\"> \r\n              <i class=\"fa fa-plus\" aria-hidden=\"true\"></i>\r\n              <i class=\"fa fa-tag\" aria-hidden=\"true\"></i>\r\n            </button>\r\n          </div>\r\n        </div>\r\n    </div>\r\n    <div class=\"form-group\">\r\n        <div class=\"input-group\">\r\n          <label for=\"doman\"> Domain: </label>\r\n          <select value.bind=\"domain\" name=\"domain\" class=\"form-control\" data-live-search=\"true\" style=\"height: 34px\">\r\n            <option repeat.for=\"domainOption of domains\" model.bind=\"domainOption\">${domainOption.text}</option>\r\n          </select>\r\n        </div>\r\n    </div>\r\n    <div class=\"form-group\">\r\n      <div class=\"col-sm-offset-4 col-sm-8\">\r\n        <button type=\"submit\" class=\"btn btn-default\">Post question</button>\r\n      </div>\r\n    </div>\r\n  </form>\r\n</template>"; });
+define('text!resources/elements/question-list.html', ['module'], function(module) { module.exports = "<template>\r\n  <require from=\"./question\"></require>\r\n  <div if.bind=\"questions.length !== 0\" value.bind=\"currentIndex\">\r\n    <div>\r\n      <div if.bind=\"qssIsNotEmpty\" repeat.for=\"question of qss[currentIndex]\">\r\n        <question content.bind=\"question\"></question>\r\n      </div>\r\n      <div>\r\n        <div if.bind=\"qssIsNotEmpty\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\" style=\"text-align: center;\">\r\n          <ul class=\"pagination pagination\" repeat.for=\"index of pageIndexes\">\r\n            <li class=\"${currentIndex == index? 'active':''}\">\r\n              <a click.delegate=\"setPage(index)\" href=\"#\">${index+1}</a>\r\n            </li>\r\n          </ul>\r\n        </div>\r\n      </div>\r\n    </div>\r\n  </div>\r\n  <div if.bind=\"questions.length === 0\">\r\n    <div class=\"jumbotron\"> No questions asked yet </div>\r\n  </div>\r\n</template>"; });
+define('text!resources/elements/question.html', ['module'], function(module) { module.exports = "<template>\r\n    <require from=\"../value-converters/dates\"></require>\r\n    <div if.bind=\"!deleted\" class=\"question\">\r\n        <!-- Headline -->\r\n        <div class=\"row\">\r\n            <div class=\"col-lg-10 col-md-8 col-sm-8 col-xs-12 question-clickable question-headline\"> <a route-href=\"route: question-details; params.bind: { id: content._id }\">${content.headline}</a></div>\r\n            <!--if.bind=\"cuser.isLogedIn && content.createdByUserId == cuser.id\"-->\r\n            <div class=\"col-lg-2 col-md-4 col-sm-4 col-xs-12 question-admin\">\r\n                <button if.bind=\"authorized\" class=\"btn btn-warning btn-xs\">\r\n                    <i class=\"fa fa-pencil\" aria-hidden=\"true\"></i>\r\n                </button>\r\n                <button if.bind=\"authorized\" class=\"btn btn-danger btn-xs\" click.trigger=\"delete()\">\r\n                    <i class=\"fa fa-trash\" aria-hidden=\"true\"></i>\r\n                </button>\r\n                <button if.bind=\"authenticated && !authorized\" class=\"btn btn-info btn-xs\" click.trigger=\"pin()\">\r\n                    <i class=\"fa fa-thumb-tack\" style=\"color: ${pinned ? 'black': 'white'}\" aria-hidden=\"true\"></i>\r\n                </button>\r\n            </div>\r\n        </div>\r\n\r\n        <div>\r\n            <div class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n                <div class=\"row\">\r\n                    <div class=\"question-text\">${content.text}</div>\r\n                </div>\r\n            </div>\r\n        </div>\r\n        <!-- Tags and Domain -->\r\n        <div class=\"row\">\r\n            <div class=\"col-lg-8 col-md-8 col-sm-6 col-xs-12 question-tags\">\r\n                <i class=\"fa fa-tags\" aria-hidden=\"true\"></i>\r\n                <span style=\"color: #999\" if.bind=\"content.TagQuestions.length === 0\"><i>(No tags attached)</i></span>\r\n                <span repeat.for=\"tag of content.TagQuestions\"> <span class=\"tag tag-pill\"> ${tag.TagText} </span></span>\r\n            </div>\r\n            <div class=\"col-lg-4 col-md-4 col-sm-6 col-xs-12 question-domain\">\r\n               <div class=\"col-xs-12\"> <i>${content.DomainText}</i></div>\r\n            </div>\r\n        </div>\r\n        <div class=\"row\">\r\n            <div class=\"col-lg-8 col-md-8 col-sm-6 col-xs-12\">\r\n                    <button if.bind=\"authenticated\" class=\"btn btn-default btn-xs col-sm-12 col-xs-4 col-md-4\" data-toggle=\"collapse\" data-target=\"#quick-answer-${content._id}\"><i class=\"fa fa-pencil\" aria-hidden=\"true\"></i><span> Answer</span> <span>${content.Answers.length}</span></button>\r\n                    <button if.bind=\"authenticated\" class=\"btn btn-default btn-xs col-sm-6 col-xs-4 col-md-4\"><i class=\"fa fa-thumbs-o-up\" aria-hidden=\"true\"></i> <span>${content.positiveVotes}</span></button>\r\n                    <button if.bind=\"authenticated\" class=\"btn btn-default btn-xs col-sm-6 col-xs-4 col-md-4\" style=\"color:red\"><i class=\"fa fa-thumbs-o-down\" aria-hidden=\"true\"></i> <span>${content.positiveVotes}</span></button>\r\n            </div>\r\n            <div class=\"col-lg-4 col-md-4 col-sm-6 col-xs-12 question-user\">\r\n                <div class=\"col-xs-12\">${content.createdAt | dateFormat}</div>  \r\n                <div class=\"col-xs-12\"><i class=\"fa fa-user-circle-o\" aria-hidden=\"true\"></i><i>someuser@mail.com</i></div>\r\n            </div>\r\n            <div id=\"quick-answer-${content._id}\" class=\"col-lg-12 col-md-12 col-sm-12 col-xs-12 collapse\">\r\n                <form class=\"form-horizontal\" role=\"form\" submit.delegate=\"quickAnswer()\">\r\n                    <div class=\"form-group col-lg-12 col-md-12 col-sm-12 col-xs-12\">\r\n                        <label class=\"control-label\" for=\"answer\">Answer:</label>\r\n                        <textarea value.bind=\"answerText\" class=\"form-control\" rows=\"7\" name=\"answer\" placeholder=\"Enter quick answer here\"></textarea>\r\n                        <button type=\"submit\" data-toggle=\"collapse\" data-target=\"#quick-answer-${content._id}\" class=\"btn btn-default\">Post answer</button>\r\n                    </div>\r\n                </form>\r\n            </div>\r\n        </div>\r\n    </div>\r\n</template>"; });
+define('text!resources/elements/question-filter.html', ['module'], function(module) { module.exports = "<template>\r\n    <div>\r\n    <form role=\"form\" submit.delegate=\"filter()\">\r\n      <div class=\"form-group\">\r\n        <label for=\"questionText\"> Text:</label> \r\n        <input type=\"text\" name=\"questionText\" value.bind=\"questionText\" class=\"form-control\"> \r\n        \r\n        <label for=\"tag\">Tag</label>\r\n        <input type=\"text\" name=\"tag\" value.bind=\"tag\" class=\"form-control\">\r\n\r\n        <label for=\"domain\">Domain:</label>\r\n        <input type=\"text\" name=\"domain\" value.bind=\"domain\" class=\"form-control\">\r\n\r\n        <label for=\"dateFrom\">Date From:</label>\r\n        <input type=\"date\" name=\"dateFrom\" value.bind=\"dateFrom\" class=\"form-control\">\r\n        \r\n        <label for=\"dateTo\">Date To:</label>\r\n        <input type=\"date\" name=\"dateTo\"value.bind=\"dateTo\" class=\"form-control\">\r\n        \r\n        <button type=\"submit\" class=\"btn btn-default\"> \r\n          <span> \r\n            <i class=\"fa fa-filter\" aria-hidden=\"true\"></i>\r\n            Filter \r\n          </span> \r\n        </button>\r\n      </div>\r\n    </form>\r\n  </div>\r\n</template>"; });
 //# sourceMappingURL=app-bundle.js.map

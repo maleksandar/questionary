@@ -1,17 +1,28 @@
-import {bindable, inject} from 'aurelia-framework';
-import {HttpClient} from 'aurelia-fetch-client';
+import { bindable, inject } from 'aurelia-framework';
+import { HttpClient } from 'aurelia-fetch-client';
 
 @inject(HttpClient)
 export class QuestionList {
-  @bindable value;
+  @bindable source;
 
   constructor(httpClient) {
     this.httpClient = httpClient;
     this.qss = [];
     this.pageIndexes = [];
     this.qssIsNotEmpty = false;
+  }
 
-    this.httpClient.fetch('questions?include=Answers&include=Tags')
+  attached() {
+    let request = '';
+    if(this.source === 'pinned') {
+      request = 'questions/pinned';
+    } else if(this.source === 'mine') {
+      request = 'questions/mine';
+    } else {
+      request = 'questions?include=Answers&include=Tags'
+    }
+    console.log('QS: ',this.source);
+    this.httpClient.fetch(request)
       .then(response => response.json())
       .then(questions => {
         this.questions = questions;
@@ -26,12 +37,12 @@ export class QuestionList {
     });
   }
 
-  valueChanged(newValue, oldValue) {
-    this.questions = this.qss[newValue];
-  }
+  // valueChanged(newValue, oldValue) {
+  //   this.questions = this.qss[newValue];
+  // }
 
-  setPage(index) {
-    this.currentIndex = index;
-  }
+  // setPage(index) {
+  //   this.currentIndex = index;
+  // }
 }
 
