@@ -39,7 +39,9 @@ export class QuestionForm {
   }
 
   addTag() {
-    this.tags.push(this.tag);
-    this.tag = "";
+    if(this.tag) {
+      this.tags.push(this.tag);
+      this.tag = "";
+    }
   }
 }
