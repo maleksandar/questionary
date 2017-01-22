@@ -22,6 +22,7 @@ app.get('/', function (req, res) {
 app.use('/api/users', require('./controllers/user'));
 app.use('/api/questions', require('./controllers/question'));
 app.use('/api/answers', require('./controllers/answer'));
+app.use('/api/pin', require('./controllers/pin'));
 app.use('/api/auth', require('./auth/local'));
 
 // catch 404 and forward to error handler

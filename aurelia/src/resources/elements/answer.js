@@ -1,6 +1,6 @@
-import {bindable, inject, computedFrom } from 'aurelia-framework';
-import {HttpClient, json} from 'aurelia-fetch-client';
-import {Auth} from '../../services/auth';
+import { bindable, inject, computedFrom } from 'aurelia-framework';
+import { HttpClient, json } from 'aurelia-fetch-client';
+import { Auth } from '../../services/auth';
 
 @inject(HttpClient, Auth)
 export class Answer {

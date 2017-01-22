@@ -5,12 +5,15 @@
         <div class="row">
             <div class="col-lg-10 col-md-10 col-sm-8 col-xs-8 question-clickable question-headline"> <a route-href="route: question-details; params.bind: { id: content._id }">${content.headline}</a></div>
             <!--if.bind="cuser.isLogedIn && content.createdByUserId == cuser.id"-->
-            <div if.bind="authorized" class="col-lg-2 col-md-2 col-sm-4 col-xs-4 question-admin">
-                <button class="btn btn-warning btn-xs">
+            <div class="col-lg-2 col-md-2 col-sm-4 col-xs-4 question-admin">
+                <button if.bind="authorized" class="btn btn-warning btn-xs">
                     <i class="fa fa-pencil" aria-hidden="true"></i>
                 </button>
-                <button class="btn btn-danger btn-xs" click.trigger="delete()">
+                <button if.bind="authorized" class="btn btn-danger btn-xs" click.trigger="delete()">
                     <i class="fa fa-trash" aria-hidden="true"></i>
+                </button>
+                <button if.bind="authenticated" class="btn btn-info btn-xs" click.trigger="pin()">
+                    <i class="fa fa-thumb-tack" style="color: ${pinned ? 'black': 'white'}" aria-hidden="true"></i>
                 </button>
             </div>
         </div>

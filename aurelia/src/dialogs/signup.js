@@ -1,7 +1,7 @@
-import {bindable, inject} from 'aurelia-framework';
-import {HttpClient, json} from 'aurelia-fetch-client';
-import {Router} from 'aurelia-router';
-import {DialogController} from 'aurelia-dialog';
+import { bindable, inject } from 'aurelia-framework';
+import { HttpClient, json } from 'aurelia-fetch-client';
+import { Router } from 'aurelia-router';
+import { DialogController } from 'aurelia-dialog';
 
 
 @inject(HttpClient, Router, DialogController)
@@ -19,6 +19,12 @@ export class Signup {
     }).then(() => {
       this.dialogController.close();
       this.router.navigate("");
-    });
+    }).catch(reason => reason.json())
+    .then(reason => {
+      console.log(reason);
+      if(reason.name === "SequelizeUniqueConstraintError") {
+        console.log('not unique');
+      }
+    }); 
   }
 }

@@ -39,6 +39,19 @@ router.get('/user/:id', (req, res) => {
     .catch(handleError(res));
 });
 
+// router.get('/pinned', (req, res) => {
+//    return Question.findAll({
+//     include: getAdditionalInfoFilters(req.query.include),
+//     where: { createdByUserId: req.params.id },
+//     limit: parseInt(req.query.limit) || 5,
+//     offset: parseInt(req.query.offset) || 0
+//   })
+//     .then(questions => {
+//       res.status(200).json(questions);
+//     })
+//     .catch(handleError(res));
+// });
+
 
 router.get('/', function(req, res) {
   var filter = {};
@@ -71,8 +84,9 @@ router.get('/:id', function(req, res) {
     }).catch(handleError(res));
 });
 
-router.delete('/:id', function(req, res) {
-  return Question.destroy({ where: { _id: req.params.id } })
+router.delete('/:id', auth.isAuthenticated(), function(req, res) {
+  var userId = req.user._id;
+  return Question.destroy({ where: { _id: req.params.id, createdByUserId: userId } })
     .then((numberOfQuestions )=> {
       if(!numberOfQuestions) {
         return res.status(404).send(`There is no question with id: ${req.params.id}`);
