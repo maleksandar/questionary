@@ -49,10 +49,10 @@ router.get('/', function(req, res) {
     ]
   }
 
-  return Question.findAll({
+  return Question.findAndCountAll({
     include: getAdditionalInfoFilters(req.query.include),
     where: filter,
-    limit: parseInt(req.query.limit) || 5,
+    limit: parseInt(req.query.limit) || 3,
     offset: parseInt(req.query.offset) || 0
   })
     .then(questions => {
