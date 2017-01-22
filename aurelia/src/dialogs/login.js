@@ -1,8 +1,8 @@
-import {inject} from 'aurelia-framework';
-import {Router} from 'aurelia-router';
-import {HttpClient} from 'aurelia-fetch-client';
-import {Auth} from '../services/auth';
-import {DialogController} from 'aurelia-dialog';
+import { inject } from 'aurelia-framework';
+import { Router } from 'aurelia-router';
+import { HttpClient } from 'aurelia-fetch-client';
+import { Auth } from '../services/auth';
+import { DialogController } from 'aurelia-dialog';
 
 @inject(Auth, Router, HttpClient, DialogController)
 export class Login {

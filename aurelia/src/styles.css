@@ -147,3 +147,7 @@ ai-dialog-overlay.active {
   background-color: black;
   opacity: .5;
 }
+
+.router-view {
+  margin-top: 80px;
+}

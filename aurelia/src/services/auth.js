@@ -1,10 +1,13 @@
-import {inject} from 'aurelia-framework';
-import {HttpClient, json} from 'aurelia-fetch-client';
+import { inject } from 'aurelia-framework';
+import { HttpClient, json } from 'aurelia-fetch-client';
+import { Router } from 'aurelia-router';
 
-@inject(HttpClient)
+
+@inject(HttpClient, Router)
 export class Auth {
-  constructor(httpClient) {
+  constructor(httpClient, router) {
     this.httpClient = httpClient;
+    this.router = router;
     this.isLogedIn = sessionStorage.getItem("logedIn") === "true";
     this.currentUser = { userId: sessionStorage.getItem("userId"), role: sessionStorage.getItem("role") }
     console.log('auth constructor', this.currentUser);
@@ -34,6 +37,8 @@ export class Auth {
     sessionStorage.setItem('userId', "");
     return this.httpClient.fetch('auth/logout', {
       method: 'post'
+    }).then(() => {
+      this.router.navigate("");
     });
   }
 }

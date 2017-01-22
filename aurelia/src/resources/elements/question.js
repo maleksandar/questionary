@@ -1,7 +1,7 @@
-import {bindable, inject, computedFrom } from 'aurelia-framework';
-import {HttpClient, json} from 'aurelia-fetch-client';
-import {Auth} from '../../services/auth';
-import {DialogService} from 'aurelia-dialog';
+import { bindable, inject, computedFrom } from 'aurelia-framework';
+import { HttpClient, json } from 'aurelia-fetch-client';
+import { Auth } from '../../services/auth';
+import { DialogService } from 'aurelia-dialog';
 import { ConfirmationDialog } from './confirmation-dialog';
 import { EventAggregator } from 'aurelia-event-aggregator';
 
@@ -17,6 +17,13 @@ export class Question {
     this.auth = auth;
     this.dialogService = dialogService;
     this.ea = ea;
+  }
+
+  attached() {
+    this.httpClient.fetch(`pins/question/${this.content._id}`)
+      .then(response => response.json())
+      .then(pinned => { this.pinned = pinned; } )
+      .catch(reson => console.log(reason));
   }
 
   quickAnswer() {
@@ -41,6 +48,14 @@ export class Question {
             });
         }
       });
+  }
+
+  pin() {
+    if(!this.pinned)
+      this.httpClient.fetch(`pins/question/${this.content._id}`, { method: 'post' });
+    if(this.pinned)
+      this.httpClient.fetch(`pins/question/${this.content._id}`, { method: 'delete' });
+    this.pinned = !this.pinned;
   }
   
   @computedFrom('auth.currentUser.userId', 'content.createdByUserId')

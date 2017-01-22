@@ -5,6 +5,8 @@ var Tag = require('../models').Tag;
 var Answer = require('../models').Answer;
 var User = require('../models').User;
 var TagQuestion = require('../models').TagQuestion;
+var Domain = require('../models').Domain;
+var Pin = require('../models').Pin;
 var config = require ('../config');
 var Router = require('express').Router;
 var auth = require('../auth/auth.service');
@@ -39,6 +41,36 @@ router.get('/user/:id', (req, res) => {
     .catch(handleError(res));
 });
 
+router.get('/mine', auth.isAuthenticated(), (req, res) => {
+   return Question.findAll({
+    include: [ Answer, TagQuestion ],
+    where: { createdByUserId: req.user._id },
+    limit: parseInt(req.query.limit) || 5,
+    offset: parseInt(req.query.offset) || 0
+  })
+    .then(questions => {
+      res.status(200).json(questions);
+    })
+    .catch(handleError(res));
+});
+
+router.get('/pinned', auth.isAuthenticated(), (req, res) => {
+  var userId = req.user._id;
+  Pin.findAll({ where: { UserId : userId } })
+    .then(pins => {
+      var questionsPinned = _.map(pins, 'QuestionId');
+      Question.findAll({
+        where: { _id:  { $in: questionsPinned } },
+        include: [ Answer, TagQuestion ],
+        limit: parseInt(req.query.limit) || 5,
+        offset: parseInt(req.query.offset) || 0
+     })    .then(questions => {
+      res.status(200).json(questions);
+    })
+    .catch(handleError(res));
+    });
+});
+
 
 router.get('/', function(req, res) {
   var filter = {};
@@ -71,8 +103,9 @@ router.get('/:id', function(req, res) {
     }).catch(handleError(res));
 });
 
-router.delete('/:id', function(req, res) {
-  return Question.destroy({ where: { _id: req.params.id } })
+router.delete('/:id', auth.isAuthenticated(), function(req, res) {
+  var userId = req.user._id;
+  return Question.destroy({ where: { _id: req.params.id, createdByUserId: userId } })
     .then((numberOfQuestions )=> {
       if(!numberOfQuestions) {
         return res.status(404).send(`There is no question with id: ${req.params.id}`);
@@ -82,7 +115,7 @@ router.delete('/:id', function(req, res) {
 });
 
 router.post('/', auth.isAuthenticated(), function(req, res) {
-  var newQuestion = Question.build(req.body);
+  var newQuestion = Question.build(req.body, { include: [ Domain ] });
   newQuestion.createdByUserId = req.user._id;
 
   return newQuestion.save()
