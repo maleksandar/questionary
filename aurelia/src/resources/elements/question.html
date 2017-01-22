@@ -39,8 +39,8 @@
         <div class="row">
             <div class="col-lg-8 col-md-8 col-sm-6 col-xs-12">
                     <button if.bind="authenticated" class="btn btn-default btn-xs col-sm-12 col-xs-4 col-md-4" data-toggle="collapse" data-target="#quick-answer-${content._id}"><i class="fa fa-pencil" aria-hidden="true"></i><span> Answer</span> <span>${content.Answers.length}</span></button>
-                    <button if.bind="authenticated" class="btn btn-default btn-xs col-sm-6 col-xs-4 col-md-4"><i class="fa fa-thumbs-o-up" aria-hidden="true"></i> <span>${content.positiveVotes}</span></button>
-                    <button if.bind="authenticated" class="btn btn-default btn-xs col-sm-6 col-xs-4 col-md-4" style="color:red"><i class="fa fa-thumbs-o-down" aria-hidden="true"></i> <span>${content.positiveVotes}</span></button>
+                    <button if.bind="authenticated" class="btn btn-default btn-xs col-sm-6 col-xs-4 col-md-4" click.delegate="voteUp()"><i class="fa fa-thumbs-o-up" aria-hidden="true"></i> <span>${content.positiveVotes}</span></button>
+                    <button if.bind="authenticated" class="btn btn-default btn-xs col-sm-6 col-xs-4 col-md-4" click.delegate="voteDown()" style="color:red"><i class="fa fa-thumbs-o-down" aria-hidden="true"></i> <span>${content.negativeVotes}</span></button>
             </div>
             <div class="col-lg-4 col-md-4 col-sm-6 col-xs-12 question-user">
                 <div class="col-xs-12">${content.createdAt | dateFormat}</div>  

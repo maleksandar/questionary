@@ -57,6 +57,14 @@ export class Question {
       this.httpClient.fetch(`pins/question/${this.content._id}`, { method: 'delete' });
     this.pinned = !this.pinned;
   }
+
+  voteUp() {
+    this.httpClient.fetch('questions/votes/' + this.content._id.toString() + '/thumbsup', { method: 'put'});
+  }
+
+  voteDown() {
+    this.httpClient.fetch('questions/votes/' + this.content._id.toString() + '/thumbsdown', { method: 'put'});
+  }
   
   @computedFrom('auth.currentUser.userId', 'content.createdByUserId')
   get authorized() {

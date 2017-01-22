@@ -9,8 +9,8 @@
     <div class="row">
       <div class="col-lg-8 col-md-8 col-sm-8 col-xs-12">
         <button if.bind="authorized" class="btn btn-danger btn-xs"><i class="fa fa-trash" aria-hidden="true"></i> <span> Delete </span></button>
-        <button if.bind="authenticated && !authorized" class="btn btn-success btn-xs"><i class="fa fa-thumbs-o-up" aria-hidden="true"></i> <span class="badge">${content.positiveVotes}</span></button>
-        <button if.bind="authenticated && !authorized" class="btn btn-danger btn-xs"><i class="fa fa-thumbs-o-down" aria-hidden="true"></i> <span class="badge">${content.positiveVotes}</span></button>
+        <button if.bind="authenticated && !authorized" click.delegate="voteUp()" class="btn btn-success btn-xs"><i class="fa fa-thumbs-o-up" aria-hidden="true"></i> <span class="badge">${content.positiveVotes}</span></button>
+        <button if.bind="authenticated && !authorized" click.delegate="voteDown()" class="btn btn-danger btn-xs"><i class="fa fa-thumbs-o-down" aria-hidden="true"></i> <span class="badge">${content.positiveVotes}</span></button>
       </div>
       <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 question-user">
         <i class="fa fa-user-circle-o" aria-hidden="true"></i> <i>someuser@mail.com</i>

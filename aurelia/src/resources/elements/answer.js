@@ -11,6 +11,14 @@ export class Answer {
     this.auth = auth;
   }
 
+  voteUp() {
+    this.httpClient.fetch('answers/votes/' + this.content._id.toString() + '/thumbsup', { method: 'put'});
+  }
+
+  voteDown() {
+    this.httpClient.fetch('answers/votes/' + this.content._id.toString() + '/thumbsdown', { method: 'put'});
+  }
+
   @computedFrom('auth.currentUser.userId', 'content.createdByUserId')
   get authorized() {
     return parseInt(this.auth.currentUser.userId) === parseInt(this.content.createdByUserId);
