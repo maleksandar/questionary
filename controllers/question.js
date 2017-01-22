@@ -140,6 +140,58 @@ router.post('/', auth.isAuthenticated(), function(req, res) {
     .catch(validationError(res));
 });
 
+router.put('/votes/:id/thumbsup', auth.isAuthenticated(), function(req, res) {
+  Question.findOne({
+    where: {
+      _id: req.params.id
+    }
+  }).then(question => {
+    if(question) {
+      if(question.createdByUserId != req.user._id){
+        question.getUsers().then(users => {
+          var user = users.find(user => { return user._id == req.user._id });
+          if(!user) {
+            question.positiveVotes += 1;
+            question.addUsers([req.user._id]);
+            question.save().then(question => {
+              res.status(200).json({vote: true});
+            });
+          }
+          else {
+            res.status(200).json({vote: false});
+          }
+        });
+      }
+    }
+  });
+});
+
+router.put('/votes/:id/thumbsdown', auth.isAuthenticated(), function(req, res) {
+  Question.findOne({
+    where: {
+      _id: req.params.id
+    }
+  }).then(question => {
+    if(question) {
+      if(question.createdByUserId != req.user._id) {
+        question.getUsers().then(users => {
+          var user = users.find(user => { return user._id == req.user._id });
+          if(!user) {
+            question.negativeVotes += 1;
+            question.addUsers([req.user._id]);
+            question.save().then(question => {
+              res.status(200).json({vote: true});
+            });
+          }
+          else {
+            res.status(200).json({vote: false});
+          }
+        });
+     }
+    }
+  });
+});
+
 function getAdditionalInfoFilters(queryFilter) {
   if(typeof queryFilter === "string"){
     queryFilter = [ queryFilter ];

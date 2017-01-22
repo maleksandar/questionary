@@ -37,6 +37,11 @@ module.exports = function (sequelize, DataTypes) {
 						onDelete: "SET NULL",
 						as: "createdByUser"
 					});
+
+					Answer.belongsToMany(models.User, {
+						through: models.AnswerVote,
+						timestamps: false
+					});
 				}
 			}
 		});

@@ -37,6 +37,17 @@ module.exports = function(sequelize, DataTypes) {
     salt: DataTypes.STRING
   }, 
   {
+    classMethods: {
+		  associate: function (models) {
+			  User.belongsToMany(models.Question, {
+				  through: models.QuestionVote
+        });
+
+        User.belongsToMany(models.Answer, {
+          through: models.AnswerVote
+        });
+      }
+    },
     /**
      * Virtual Getters
      */

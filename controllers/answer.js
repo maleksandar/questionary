@@ -53,4 +53,56 @@ router.post('/', auth.isAuthenticated(), function(req, res) {
     .catch(validationError(res));
 });
 
+router.put('/votes/:id/thumbsup', auth.isAuthenticated(), function(req, res) {
+  Answer.findOne({
+    where: {
+      _id: req.params.id
+    }
+  }).then(answer => {
+    if(answer) {
+      if(answer.createdByUserId != req.user._id){
+        answer.getUsers().then(users => {
+          var user = users.find(user => { return user._id == req.user._id });
+          if(!user) {
+            answer.positiveVotes += 1;
+            answer.addUsers([req.user._id]);
+            answer.save().then(answer => {
+              res.status(200).json({vote: true});
+            });
+          }
+          else {
+            res.status(200).json({vote: false});
+          }
+        });
+      }
+    }
+  });
+});
+
+router.put('/votes/:id/thumbsdown', auth.isAuthenticated(), function(req, res) {
+  Answer.findOne({
+    where: {
+      _id: req.params.id
+    }
+  }).then(answer => {
+    if(answer) {
+      if(answer.createdByUserId != req.user._id) {
+        answer.getUsers().then(users => {
+          var user = users.find(user => { return user._id == req.user._id });
+          if(!user) {
+            answer.negativeVotes += 1;
+            answer.addUsers([req.user._id]);
+            answer.save().then(answer => {
+              res.status(200).json({vote: true});
+            });
+          }
+          else {
+            res.status(200).json({vote: false});
+          }
+        });
+     }
+    }
+  });
+});
+
 module.exports = router;

@@ -39,13 +39,20 @@ module.exports = function (sequelize, DataTypes) {
 						},
 						as: "createdByUser"
 					});
+
 					Question.belongsTo(models.Domain, {
 						onDelete: "SET NULL"
 					})
+
 					Question.hasMany(models.TagQuestion, {
 						onDelete: "CASCADE"
 					});
+
 					Question.hasMany(models.Answer, {
+					});
+
+					Question.belongsToMany(models.User, {
+						through: models.QuestionVote
 					});
 				}
 			}
