@@ -5,7 +5,7 @@ import {inject} from 'aurelia-framework';
 export class Home {
   constructor(auth) {
     this.auth = auth;
-    this.sideForm = null;
+    this.sideForm = 'filter';
   }
 
   canActivate() {
