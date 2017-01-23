@@ -1,0 +1,46 @@
+<template>
+  <ai-dialog>
+    <ai-dialog-header>
+      <h4 class="modal-title"> ${headline} </h4>
+    </ai-dialog-header>
+      <ai-dialog-body>
+      </ai-dialog-body>
+        <div class="questionForm" role="form">
+            <div class="form-group">
+                <label for="retObj.question.headline">Headline:</label>
+                <input value.bind="retObj.question.headline" required type="text" class="form-control" name="headline" placeholder="Enter the headline of your question">
+            </div>
+            <div class="form-group">
+                <label for="retObj.question.text">Text:</label>
+                <textarea value.bind="retObj.question.text" class="form-control" rows="7" name="text" placeholder="Enter the text of your question"></textarea>
+            </div>
+         <div class="form-group">
+            <div>
+                &nbsp;<span repeat.for="tag of retObj.tags"> <span class="tag tag-pill"> ${tag} <i click.trigger="removeTag(tag)" class="fa fa-times" aria-hidden="true"></i></span>          </span>
+            </div>
+            <div class="input-group col-md-6">
+                <input type="text" class="form-control" name="tag" placeholder="Add tag:" value.bind="tag">
+                <div class="input-group-btn">
+                    <button class="btn btn-primary" click.trigger="addTag()"> 
+                        <i class="fa fa-plus" aria-hidden="true"></i>
+                        <i class="fa fa-tag" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+         </div>
+         <div class="form-group">
+            <div class="input-group col-md-12">
+            <label for="doman"> Domain: </label>
+            <select value.bind="retObj.domain" name="domain" class="form-control" data-live-search="true" style="height: 34px">
+                <option repeat.for="domainOption of domains" model.bind="domainOption" selected="${retObj.domain === domainOption.text}">${domainOption.text}</option>
+            </select>
+            </div>
+         </div>
+
+        </div>
+      <ai-dialog-footer>
+         <button click.trigger = "dialogController.cancel()">Cancel</button>
+         <button click.trigger = "dialogController.ok(retObj)">Ok</button>
+      </ai-dialog-footer>
+  </ai-dialog>
+<

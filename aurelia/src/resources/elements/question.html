@@ -6,7 +6,7 @@
             <div class="col-lg-10 col-md-8 col-sm-8 col-xs-12 question-clickable question-headline"> <a route-href="route: question-details; params.bind: { id: content._id }">${content.headline}</a></div>
             <!--if.bind="cuser.isLogedIn && content.createdByUserId == cuser.id"-->
             <div class="col-lg-2 col-md-4 col-sm-4 col-xs-12 question-admin">
-                <button if.bind="authorized" class="btn btn-warning btn-xs">
+                <button if.bind="authorized" class="btn btn-warning btn-xs" click.trigger="edit()">
                     <i class="fa fa-pencil" aria-hidden="true"></i>
                 </button>
                 <button if.bind="authorized" class="btn btn-danger btn-xs" click.trigger="delete()">

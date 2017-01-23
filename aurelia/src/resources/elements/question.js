@@ -3,6 +3,7 @@ import { HttpClient, json } from 'aurelia-fetch-client';
 import { Auth } from '../../services/auth';
 import { DialogService } from 'aurelia-dialog';
 import { ConfirmationDialog } from './confirmation-dialog';
+import { EditDialog } from './edit-dialog';
 import { EventAggregator } from 'aurelia-event-aggregator';
 
 var toastr = require('toastr');
@@ -34,6 +35,16 @@ export class Question {
         this.ea.publish('questionAnswered', { id: this.content._id  });
         this.toastr.success('You have successfully posted your answer');
       });
+  }
+
+  edit() {
+    this.dialogService.open({ viewModel: EditDialog, model: {
+      headline: "Edit question", question: this.content
+    }}).then(response => {
+      if(!response.wasCancelled) {
+          //Saljemo zahtev na server
+      }
+    });
   }
 
   delete() {
