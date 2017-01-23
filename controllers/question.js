@@ -44,12 +44,14 @@ router.get('/user/:id', (req, res) => {
 router.get('/mine', auth.isAuthenticated(), (req, res) => {
    return Question.findAll({
     include: [ Answer, TagQuestion ],
-    where: { createdByUserId: req.user._id },
+    where: _.merge({ createdByUserId: req.user._id }, getGeneralFilters(req)),
     limit: parseInt(req.query.limit) || 5,
     offset: parseInt(req.query.offset) || 0
-  })
-    .then(questions => {
-      res.status(200).json(questions);
+  }).then(questions => {
+        if(getTagFilters(req)) {
+          questions = filterQuestionsByTags(questions);
+        }
+        res.status(200).json(questions);
     })
     .catch(handleError(res));
 });
@@ -60,26 +62,58 @@ router.get('/pinned', auth.isAuthenticated(), (req, res) => {
     .then(pins => {
       var questionsPinned = _.map(pins, 'QuestionId');
       Question.findAll({
-        where: { _id:  { $in: questionsPinned } },
         include: [ Answer, TagQuestion ],
+        where: _.merge({ _id:  { $in: questionsPinned } }, getGeneralFilters(req)),
         limit: parseInt(req.query.limit) || 5,
         offset: parseInt(req.query.offset) || 0
-     })    .then(questions => {
-      res.status(200).json(questions);
+     }).then(questions => {
+        if(getTagFilters(req)) {
+          questions = filterQuestionsByTags(questions);
+        }
+        res.status(200).json(questions);
     })
     .catch(handleError(res));
     });
 });
 
-
-router.get('/', function(req, res) {
+function getGeneralFilters(req) {
   var filter = {};
-  if(req.query.questiontext) {
+  if(req.query.questiontextFilter) {
+    req.query.questiontextFilter = decodeURIComponent(req.query.questiontextFilter);
     filter.$or = [
-      { headline: { $like: `%${req.query.questiontext}%` } },
-      { text: { $like: `%${req.query.questiontext}%` } }
-    ]
+      { headline: { $like: `%${req.query.questiontextFilter}%` } },
+      { text: { $like: `%${req.query.questiontextFilter}%` } }
+    ];
   }
+
+  if(req.query.domainFilter) {
+      req.query.questiontextFilter = decodeURIComponent(req.query.questiontextFilter);
+      filter.DomainText = { $like: `%${req.query.domainFilter}%` };
+  }
+
+  return filter;
+}
+
+function getTagFilters(req) {
+  if(req.query.tagFilter) {
+    var tagFilter = req.query.tagFilter;
+  if(typeof tagFilter === "string") {
+      tagFilter = [ tagFilter ];
+    }
+
+    tagFilter = _.map(tagFilter, decodeURIComponent);
+  }
+  return tagFilter;
+}
+
+function filterQuestionsByTags(questions) {
+  let filteredQuestions = _.filter(questions, question => {
+    var questionTags = _.map(question.TagQuestions, q => q.TagText)
+      return _.intersection(tagFilter, questionTags).length > 0;
+  });
+}
+router.get('/', function(req, res) {
+  var filter = getGeneralFilters(req);
 
   return Question.findAll({
     include: getAdditionalInfoFilters(req.query.include),
@@ -88,6 +122,9 @@ router.get('/', function(req, res) {
     offset: parseInt(req.query.offset) || 0
   })
     .then(questions => {
+      if(getTagFilters(req)) {
+        questions = filterQuestionsByTags(questions);
+      }
       res.status(200).json(questions);
     })
     .catch(handleError(res));

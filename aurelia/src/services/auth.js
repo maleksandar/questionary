@@ -22,6 +22,8 @@ export class Auth {
     .then(userinfo => {
       console.log(userinfo);
       // sessionStorage can only save strings not bools.
+      sessionStorage.setItem('role', userinfo.user_role)
+      this.currentUser.role = userinfo.user_role;
       sessionStorage.setItem('logedIn', "true");
       this.isLogedIn = true;
       this.currentUser.userId = userinfo.user_id;
@@ -31,6 +33,8 @@ export class Auth {
   }
 
   logout() {
+    sessionStorage.setItem('role', "")
+    this.currentUser.role = "";
     sessionStorage.setItem('logedIn', "false");
     this.isLogedIn = false;
     this.currentUser.userId = "";

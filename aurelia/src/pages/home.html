@@ -1,15 +1,24 @@
 <template>
   <div class="row">
-    <question-form class='col-md-6'></question-form>
   </div>
   <div class='row'>
-    <div class='col-md-6'>
-      <h4>Your Questions:</h4>
-      <question-list source.bind='"mine"'></question-list>
+    <div class="col-md-4 col-sm-12">
+      <div class="row">
+        <button class=" ${ sideForm === 'form'? 'active': ''} btn btn-default col-md-6 col-sm-6 col-xs-6 col-lg-6" click.trigger="showForm()">Ask a Question</button>
+        <button class="${ sideForm === 'filter'? 'active': ''} btn btn-default col-md-6 col-sm-6 col-xs-6 col-lg-6" click.trigger="showFilter()">FilterQuestions</button>
+      </div>
+      <question-filter if.bind="sideForm==='filter'"></question-filter>
+      <question-form if.bind="sideForm==='form'"></question-form>
     </div>
-    <div class='col-md-6'>
-      <h4>Pinned Questions:</h4>
-      <question-list source.bind='"pinned"'></question-list>
+    <div class='col-md-8 col-sm-12'>
+      <div class='col-lg-6 col-md-12  col-sm-12 col-xs-12'>
+        <h4>Your Questions:</h4>
+        <question-list source.bind='"mine"'></question-list>
+      </div>
+      <div class='col-lg-6 col-md-12 col-sm-12 col-xs-12'>
+        <h4>Pinned Questions:</h4>
+        <question-list source.bind='"pinned"'></question-list>
+      </div>
     </div>
   </div>
 </template>
