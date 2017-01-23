@@ -395,7 +395,7 @@ define('services/auth',['exports', 'aurelia-framework', 'aurelia-fetch-client', 
     return Auth;
   }()) || _class);
 });
-define('resources/elements/answer',['exports', 'aurelia-framework', 'aurelia-fetch-client', '../../services/auth'], function (exports, _aureliaFramework, _aureliaFetchClient, _auth) {
+define('resources/elements/answer',['exports', 'aurelia-framework', 'aurelia-fetch-client', '../../services/auth', 'aurelia-dialog', './confirmation-dialog', 'toastr'], function (exports, _aureliaFramework, _aureliaFetchClient, _auth, _aureliaDialog, _confirmationDialog, toastr) {
   'use strict';
 
   Object.defineProperty(exports, "__esModule", {
@@ -472,33 +472,49 @@ define('resources/elements/answer',['exports', 'aurelia-framework', 'aurelia-fet
 
   var _dec, _dec2, _dec3, _class, _desc, _value, _class2, _descriptor;
 
-  var Answer = exports.Answer = (_dec = (0, _aureliaFramework.inject)(_aureliaFetchClient.HttpClient, _auth.Auth), _dec2 = (0, _aureliaFramework.computedFrom)('auth.currentUser.userId', 'content.createdByUserId'), _dec3 = (0, _aureliaFramework.computedFrom)('auth.isLogedIn'), _dec(_class = (_class2 = function () {
-    function Answer(httpClient, auth) {
+  var Answer = exports.Answer = (_dec = (0, _aureliaFramework.inject)(_aureliaFetchClient.HttpClient, toastr, _auth.Auth, _aureliaDialog.DialogService), _dec2 = (0, _aureliaFramework.computedFrom)('auth.currentUser.userId', 'content.createdByUserId'), _dec3 = (0, _aureliaFramework.computedFrom)('auth.isLogedIn'), _dec(_class = (_class2 = function () {
+    function Answer(httpClient, toastr, auth, dialogService) {
       _classCallCheck(this, Answer);
 
       _initDefineProp(this, 'content', _descriptor, this);
 
       this.httpClient = httpClient;
+      this.toastr = toastr;
       this.auth = auth;
+      this.dialogService = dialogService;
     }
 
-    Answer.prototype.voteUp = function voteUp() {
+    Answer.prototype.delete = function _delete() {
       var _this = this;
 
-      this.httpClient.fetch('answers/votes/' + this.content._id.toString() + '/thumbsup', { method: 'put' }).then(function (response) {
+      this.dialogService.open({ viewModel: _confirmationDialog.ConfirmationDialog, model: { headline: "Delete answer", message: "Are you sure you want to delete this answer?" } }).then(function (response) {
+        if (!response.wasCancelled) {
+          console.log(response);
+          _this.httpClient.fetch('answers/' + _this.content._id, { method: 'delete' }).then(function () {
+            _this.toastr.success('You have successfully deleted your answer');
+            _this.deleted = true;
+          });
+        }
+      });
+    };
+
+    Answer.prototype.voteUp = function voteUp() {
+      var _this2 = this;
+
+      this.httpClient.fetch('answers/votes/' + this.content._id + '/thumbsup', { method: 'put' }).then(function (response) {
         return response.json();
       }).then(function (voteResp) {
-        if (voteResp.vote) _this.content.positiveVotes += 1;
+        if (voteResp.vote) _this2.content.positiveVotes += 1;
       });
     };
 
     Answer.prototype.voteDown = function voteDown() {
-      var _this2 = this;
+      var _this3 = this;
 
-      this.httpClient.fetch('answers/votes/' + this.content._id.toString() + '/thumbsdown', { method: 'put' }).then(function (response) {
+      this.httpClient.fetch('answers/votes/' + this.content._id + '/thumbsdown', { method: 'put' }).then(function (response) {
         return response.json();
       }).then(function (voteResp) {
-        if (voteResp.vote) _this2.content.negativeVotes += 1;
+        if (voteResp.vote) _this3.content.negativeVotes += 1;
       });
     };
 
@@ -879,7 +895,7 @@ define('resources/elements/question',['exports', 'aurelia-framework', 'aurelia-f
     Question.prototype.voteUp = function voteUp() {
       var _this4 = this;
 
-      this.httpClient.fetch('questions/votes/' + this.content._id.toString() + '/thumbsup', { method: 'put' }).then(function (response) {
+      this.httpClient.fetch('questions/votes/' + this.content._id + '/thumbsup', { method: 'put' }).then(function (response) {
         return response.json();
       }).then(function (voteResp) {
         if (voteResp.vote) _this4.content.positiveVotes += 1;
@@ -889,7 +905,7 @@ define('resources/elements/question',['exports', 'aurelia-framework', 'aurelia-f
     Question.prototype.voteDown = function voteDown() {
       var _this5 = this;
 
-      this.httpClient.fetch('questions/votes/' + this.content._id.toString() + '/thumbsdown', { method: 'put' }).then(function (response) {
+      this.httpClient.fetch('questions/votes/' + this.content._id + '/thumbsdown', { method: 'put' }).then(function (response) {
         return response.json();
       }).then(function (voteResp) {
         if (voteResp.vote) _this5.content.negativeVotes += 1;
@@ -1671,7 +1687,7 @@ define('text!dialogs/signup.html', ['module'], function(module) { module.exports
 define('text!pages/home.html', ['module'], function(module) { module.exports = "<template>\r\n  <div class=\"row\">\r\n    <question-form class='col-md-6'></question-form>\r\n  </div>\r\n  <div class='row'>\r\n    <div class='col-md-6'>\r\n      <h4>Your Questions:</h4>\r\n      <question-list source.bind='\"mine\"'></question-list>\r\n    </div>\r\n    <div class='col-md-6'>\r\n      <h4>Pinned Questions:</h4>\r\n      <question-list source.bind='\"pinned\"'></question-list>\r\n    </div>\r\n  </div>\r\n</template>"; });
 define('text!pages/question-details.html', ['module'], function(module) { module.exports = "<template>\r\n  <require from=\"../resources/elements/question\"></require>\r\n  <require from=\"../resources/elements/answer\"></require>\r\n\r\n  <question content.bind=\"questionContent\"></question>\r\n  <div>\r\n    <div repeat.for=\"answer of answers\">\r\n      <answer content.bind=\"answer\"></answer>\r\n    </div>\r\n  </div>\r\n</template>"; });
 define('text!pages/questions.html', ['module'], function(module) { module.exports = "<template>\r\n  <div class=\"row\">\r\n    <question-filter class =\"col-xs-12 col-sm-4 col-md-4 col-lg-4\"></question-filter>\r\n    <div class =\"col-xs-12 col-sm-8 col-md-8 col-lg-8\">\r\n      <h4> Filtered Questions: </h4>\r\n      <question-list></question-list>\r\n    </div>\r\n  </div>\r\n</template>"; });
-define('text!resources/elements/answer.html', ['module'], function(module) { module.exports = "<template>\r\n  <div class=\"well\">\r\n    <div>\r\n      <div class=\"well\">\r\n        <div class=\"answer-text\">${content.text}</div>\r\n      </div>\r\n    </div>\r\n\r\n    <div class=\"row\">\r\n      <div class=\"col-lg-8 col-md-8 col-sm-8 col-xs-12\">\r\n        <button if.bind=\"authorized\" class=\"btn btn-danger btn-xs\"><i class=\"fa fa-trash\" aria-hidden=\"true\"></i> <span> Delete </span></button>\r\n        <button if.bind=\"authenticated && !authorized\" click.delegate=\"voteUp()\" class=\"btn btn-success btn-xs\"><i class=\"fa fa-thumbs-o-up\" aria-hidden=\"true\"></i> <span class=\"badge\">${content.positiveVotes}</span></button>\r\n        <button if.bind=\"authenticated && !authorized\" click.delegate=\"voteDown()\" class=\"btn btn-danger btn-xs\"><i class=\"fa fa-thumbs-o-down\" aria-hidden=\"true\"></i> <span class=\"badge\">${content.negativeVotes}</span></button>\r\n      </div>\r\n      <div class=\"col-lg-4 col-md-4 col-sm-4 col-xs-12 question-user\">\r\n        <i class=\"fa fa-user-circle-o\" aria-hidden=\"true\"></i> <i>someuser@mail.com</i>\r\n      </div>\r\n    </div>\r\n  </div>\r\n</template>"; });
+define('text!resources/elements/answer.html', ['module'], function(module) { module.exports = "<template>\r\n  <div if.bind=\"!deleted\" class=\"well\">\r\n    <div>\r\n      <div class=\"well\">\r\n        <div class=\"answer-text\">${content.text}</div>\r\n      </div>\r\n    </div>\r\n\r\n    <div class=\"row\">\r\n      <div class=\"col-lg-8 col-md-8 col-sm-8 col-xs-12\">\r\n        <button if.bind=\"authorized\" click.trigger=\"delete()\" class=\"btn btn-danger btn-xs\"><i class=\"fa fa-trash\" aria-hidden=\"true\"></i> <span> Delete </span></button>\r\n        <button if.bind=\"authenticated && !authorized\" click.delegate=\"voteUp()\" class=\"btn btn-success btn-xs\"><i class=\"fa fa-thumbs-o-up\" aria-hidden=\"true\"></i> <span class=\"badge\">${content.positiveVotes}</span></button>\r\n        <button if.bind=\"authenticated && !authorized\" click.delegate=\"voteDown()\" class=\"btn btn-danger btn-xs\"><i class=\"fa fa-thumbs-o-down\" aria-hidden=\"true\"></i> <span class=\"badge\">${content.negativeVotes}</span></button>\r\n      </div>\r\n      <div class=\"col-lg-4 col-md-4 col-sm-4 col-xs-12 question-user\">\r\n        <i class=\"fa fa-user-circle-o\" aria-hidden=\"true\"></i> <i>someuser@mail.com</i>\r\n      </div>\r\n    </div>\r\n  </div>\r\n</template>"; });
 define('text!resources/elements/confirmation-dialog.html', ['module'], function(module) { module.exports = "<template>\r\n  <ai-dialog>\r\n    <ai-dialog-header>\r\n      <h4 class=\"modal-title\"> ${headline} </h4>\r\n    </ai-dialog-header>\r\n      <ai-dialog-body>\r\n         <h2>${message}</h2>\r\n      </ai-dialog-body>\r\n      <ai-dialog-footer>\r\n         <button click.trigger = \"dialogController.cancel()\">Cancel</button>\r\n         <button click.trigger = \"dialogController.ok(message)\">Ok</button>\r\n      </ai-dialog-footer>\r\n  </ai-dialog>\r\n</template>"; });
 define('text!resources/elements/navigation-element.html', ['module'], function(module) { module.exports = "<template bindable=\"href, title, icon\">\r\n      <a class=\"navbar-brand\" href=\"${href}\">\r\n        <i class=\"${icon}\"></i>\r\n        <span>${title}</span>\r\n      </a>\r\n</template>"; });
 define('text!resources/elements/question-filter.html', ['module'], function(module) { module.exports = "<template>\r\n    <div>\r\n    <form role=\"form\" submit.delegate=\"filter()\">\r\n      <div class=\"form-group\">\r\n        <label for=\"questionText\"> Text:</label> \r\n        <input type=\"text\" name=\"questionText\" value.bind=\"questionText\" class=\"form-control\"> \r\n        \r\n        <label for=\"tag\">Tag</label>\r\n        <input type=\"text\" name=\"tag\" value.bind=\"tag\" class=\"form-control\">\r\n\r\n        <label for=\"domain\">Domain:</label>\r\n        <input type=\"text\" name=\"domain\" value.bind=\"domain\" class=\"form-control\">\r\n\r\n        <label for=\"dateFrom\">Date From:</label>\r\n        <input type=\"date\" name=\"dateFrom\" value.bind=\"dateFrom\" class=\"form-control\">\r\n        \r\n        <label for=\"dateTo\">Date To:</label>\r\n        <input type=\"date\" name=\"dateTo\"value.bind=\"dateTo\" class=\"form-control\">\r\n        \r\n        <button type=\"submit\" class=\"btn btn-default\"> \r\n          <span> \r\n            <i class=\"fa fa-filter\" aria-hidden=\"true\"></i>\r\n            Filter \r\n          </span> \r\n        </button>\r\n      </div>\r\n    </form>\r\n  </div>\r\n</template>"; });

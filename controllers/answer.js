@@ -43,6 +43,16 @@ router.get('/question/:id', function(req, res) {
     .catch(handleError(res));
 });
 
+router.delete('/:id', auth.isAuthenticated(), function(req, res) {
+  var userId = req.user._id;
+  return Answer.destroy({ where: { _id: req.params.id, createdByUserId: userId } })
+    .then(numberOfAnswers => {
+      if(!numberOfAnswers) 
+        return res.status(404).send(`There is no answer with id: ${req.params.id}`);
+      return res.status(200).send(`Answer deleted: ${req.params.id}`);
+    }).catch(handleError(res));
+});
+
 router.post('/', auth.isAuthenticated(), function(req, res) {
   var newAnswer = Answer.build(req.body);
   newAnswer.createdByUserId = req.user._id;

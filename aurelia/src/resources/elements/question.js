@@ -59,7 +59,7 @@ export class Question {
   }
 
   voteUp() {
-    this.httpClient.fetch('questions/votes/' + this.content._id.toString() + '/thumbsup', { method: 'put'})
+    this.httpClient.fetch(`questions/votes/${this.content._id}/thumbsup`, { method: 'put'})
       .then(response => response.json())
       .then(voteResp => {
         if(voteResp.vote)
@@ -68,7 +68,7 @@ export class Question {
   }
 
   voteDown() {
-    this.httpClient.fetch('questions/votes/' + this.content._id.toString() + '/thumbsdown', { method: 'put'})
+    this.httpClient.fetch(`questions/votes/${this.content._id}/thumbsdown`, { method: 'put'})
       .then(response => response.json())
       .then(voteResp => {
         if(voteResp.vote)
