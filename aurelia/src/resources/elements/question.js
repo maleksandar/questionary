@@ -40,9 +40,21 @@ export class Question {
   edit() {
     this.dialogService.open({ viewModel: EditDialog, model: {
       headline: "Edit question", question: this.content
-    }}).then(response => {
-      if(!response.wasCancelled) {
-          //Saljemo zahtev na server
+    }}).then(dialogResponse => {
+      if(!dialogResponse.wasCancelled) {
+        console.log(dialogResponse.output);
+        this.httpClient.fetch(`questions/${this.content._id}`, { 
+            method: 'put',
+            body: json({
+              headline: dialogResponse.output.question.headline,
+              text: dialogResponse.output.question.text,
+              domain: dialogResponse.output.domain,
+              tags: dialogResponse.output.tags
+            })
+          })
+          .then((response) => {
+
+          });
       }
     });
   }

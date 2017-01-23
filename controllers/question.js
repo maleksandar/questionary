@@ -177,6 +177,35 @@ router.post('/', auth.isAuthenticated(), function(req, res) {
     .catch(validationError(res));
 });
 
+router.put('/:id', auth.isAuthenticated(), function(req, res) {
+  Question.findOne({
+    where: {
+      _id: req.params.id,
+      createdByUserId: req.user._id
+    }
+  }).then(question => {
+    console.log(req.body.headline);
+    console.log(req.body.text);
+    console.log(req.body.domain.text);
+    console.log(req.body.tags);
+    if(question) {
+      question.headline = req.body.headline;
+      question.text = req.body.text;
+      var tagQuestions = [];
+      req.body.tags.forEach((tag) => tagQuestions.push(tag));
+      //question.setTagQuestions(tagQuestions);
+      question.DomainText = req.body.domain.text;
+      question.save()
+        .then(question => {
+          res.status(200).json({ updated: true });
+        })
+        .catch(handleError(res));
+    }
+    else
+      return res.status(200).json({ updated: false });
+  });
+});
+
 router.put('/votes/:id/thumbsup', auth.isAuthenticated(), function(req, res) {
   Question.findOne({
     where: {

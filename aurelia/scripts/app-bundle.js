@@ -815,6 +815,7 @@ define('resources/elements/edit-dialog',['exports', 'aurelia-framework', 'aureli
             this.retObj.tags = content.question.TagQuestions.map(function (tag) {
                 return tag.TagText;
             });
+            console.log(content.question.DomainText);
             this.retObj.domain = content.question.DomainText;
         };
 
@@ -1220,22 +1221,35 @@ define('resources/elements/question',['exports', 'aurelia-framework', 'aurelia-f
     };
 
     Question.prototype.edit = function edit() {
+      var _this3 = this;
+
       this.dialogService.open({ viewModel: _editDialog.EditDialog, model: {
           headline: "Edit question", question: this.content
-        } }).then(function (response) {
-        if (!response.wasCancelled) {}
+        } }).then(function (dialogResponse) {
+        if (!dialogResponse.wasCancelled) {
+          console.log(dialogResponse.output);
+          _this3.httpClient.fetch('questions/' + _this3.content._id, {
+            method: 'put',
+            body: (0, _aureliaFetchClient.json)({
+              headline: dialogResponse.output.question.headline,
+              text: dialogResponse.output.question.text,
+              domain: dialogResponse.output.domain,
+              tags: dialogResponse.output.tags
+            })
+          }).then(function (response) {});
+        }
       });
     };
 
     Question.prototype.delete = function _delete() {
-      var _this3 = this;
+      var _this4 = this;
 
       this.dialogService.open({ viewModel: _confirmationDialog.ConfirmationDialog, model: { headline: "Delete question", message: "Are you sure you want to delete this question?" } }).then(function (response) {
         if (!response.wasCancelled) {
           console.log(response);
-          _this3.httpClient.fetch('questions/' + _this3.content._id, { method: 'delete' }).then(function () {
-            _this3.toastr.success('You have successfully deleted your question');
-            _this3.deleted = true;
+          _this4.httpClient.fetch('questions/' + _this4.content._id, { method: 'delete' }).then(function () {
+            _this4.toastr.success('You have successfully deleted your question');
+            _this4.deleted = true;
           });
         }
       });
@@ -1248,22 +1262,22 @@ define('resources/elements/question',['exports', 'aurelia-framework', 'aurelia-f
     };
 
     Question.prototype.voteUp = function voteUp() {
-      var _this4 = this;
+      var _this5 = this;
 
       this.httpClient.fetch('questions/votes/' + this.content._id + '/thumbsup', { method: 'put' }).then(function (response) {
         return response.json();
       }).then(function (voteResp) {
-        if (voteResp.vote) _this4.content.positiveVotes += 1;
+        if (voteResp.vote) _this5.content.positiveVotes += 1;
       });
     };
 
     Question.prototype.voteDown = function voteDown() {
-      var _this5 = this;
+      var _this6 = this;
 
       this.httpClient.fetch('questions/votes/' + this.content._id + '/thumbsdown', { method: 'put' }).then(function (response) {
         return response.json();
       }).then(function (voteResp) {
-        if (voteResp.vote) _this5.content.negativeVotes += 1;
+        if (voteResp.vote) _this6.content.negativeVotes += 1;
       });
     };
 

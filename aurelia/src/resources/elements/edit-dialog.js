@@ -20,6 +20,7 @@ export class EditDialog {
         this.headline = content.headline;
         this.retObj.question = content.question;
         this.retObj.tags = content.question.TagQuestions.map(tag => {return tag.TagText; });
+        console.log(content.question.DomainText);
         this.retObj.domain = content.question.DomainText;
     }
 
