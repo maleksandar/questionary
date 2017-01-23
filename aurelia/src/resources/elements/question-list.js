@@ -79,13 +79,5 @@ export class QuestionList {
     this.questionDeletedSubscriber.dispose();
 
   }
-
-  // valueChanged(newValue, oldValue) {
-  //   this.questions = this.qss[newValue];
-  // }
-
-  // setPage(index) {
-  //   this.currentIndex = index;
-  // }
 }
 

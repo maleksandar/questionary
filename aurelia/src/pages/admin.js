@@ -26,7 +26,8 @@ export class Admin {
   addDomain() {
     this.httpClient.fetch(`domains`, { method: 'post', body: json({ text: this.domain }) })
       .then(() => {
-        this.httpClient.fetch(`domains`).then(response => response.json()).then(domains => { this.domains = domains; });
+        this.httpClient.fetch(`domains`).then(response => response.json())
+        .then(domains => { this.domains = domains; this.domain = ""; });
       });
   }
 

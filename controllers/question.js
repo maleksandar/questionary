@@ -33,7 +33,8 @@ router.get('/user/:id', (req, res) => {
     include: getAdditionalInfoFilters(req.query.include),
     where: { createdByUserId: req.params.id },
     limit: parseInt(req.query.limit) || 5,
-    offset: parseInt(req.query.offset) || 0
+    offset: parseInt(req.query.offset) || 0,
+    order: 'createdAt DESC'
   })
     .then(questions => {
       res.status(200).json(questions);
@@ -46,7 +47,8 @@ router.get('/mine', auth.isAuthenticated(), (req, res) => {
     include: [ Answer, TagQuestion ],
     where: _.merge({ createdByUserId: req.user._id }, getGeneralFilters(req)),
     limit: parseInt(req.query.limit) || 5,
-    offset: parseInt(req.query.offset) || 0
+    offset: parseInt(req.query.offset) || 0,
+    order: 'createdAt DESC'
   }).then(questions => {
         if(getTagFilters(req)) {
           questions = filterQuestionsByTags(getTagFilters(req), questions);
@@ -65,7 +67,8 @@ router.get('/pinned', auth.isAuthenticated(), (req, res) => {
         include: [ Answer, TagQuestion ],
         where: _.merge({ _id:  { $in: questionsPinned } }, getGeneralFilters(req)),
         limit: parseInt(req.query.limit) || 5,
-        offset: parseInt(req.query.offset) || 0
+        offset: parseInt(req.query.offset) || 0,
+        order: 'createdAt DESC'
      }).then(questions => {
         if(getTagFilters(req)) {
           questions = filterQuestionsByTags(getTagFilters(req), questions);
