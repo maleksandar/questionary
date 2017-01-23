@@ -23,7 +23,7 @@ export class Signup {
     .then(reason => {
       console.log(reason);
       if(reason.name === "SequelizeUniqueConstraintError") {
-        console.log('not unique');
+        this.signupError = `'${this.email}' aready exists.`;
       }
     }); 
   }

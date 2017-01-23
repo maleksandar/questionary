@@ -21,7 +21,7 @@
           &nbsp;<span repeat.for="tag of tags"> <span class="tag tag-pill"> ${tag} <i click.trigger="removeTag(tag)" class="fa fa-times" aria-hidden="true"></i></span>          </span>
         </div>
         <div class="input-group col-md-6">
-          <input type="text" class="form-control" name="tag" placeholder="Add tag:" value.bind="tag">
+          <input type="text" class="form-control" maxlength=15 name="tag" placeholder="Add a tag:" value.bind="tag">
           <div class="input-group-btn">
             <button class="btn btn-primary" click.trigger="addTag()"> 
               <i class="fa fa-plus" aria-hidden="true"></i>

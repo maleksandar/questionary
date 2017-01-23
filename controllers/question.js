@@ -49,7 +49,7 @@ router.get('/mine', auth.isAuthenticated(), (req, res) => {
     offset: parseInt(req.query.offset) || 0
   }).then(questions => {
         if(getTagFilters(req)) {
-          questions = filterQuestionsByTags(questions);
+          questions = filterQuestionsByTags(getTagFilters(req), questions);
         }
         res.status(200).json(questions);
     })
@@ -68,7 +68,7 @@ router.get('/pinned', auth.isAuthenticated(), (req, res) => {
         offset: parseInt(req.query.offset) || 0
      }).then(questions => {
         if(getTagFilters(req)) {
-          questions = filterQuestionsByTags(questions);
+          questions = filterQuestionsByTags(getTagFilters(req), questions);
         }
         res.status(200).json(questions);
     })
@@ -106,12 +106,15 @@ function getTagFilters(req) {
   return tagFilter;
 }
 
-function filterQuestionsByTags(questions) {
+function filterQuestionsByTags(tagFilter, questions) {
   let filteredQuestions = _.filter(questions, question => {
     var questionTags = _.map(question.TagQuestions, q => q.TagText)
       return _.intersection(tagFilter, questionTags).length > 0;
   });
+
+  return filteredQuestions;
 }
+
 router.get('/', function(req, res) {
   var filter = getGeneralFilters(req);
 
@@ -123,7 +126,7 @@ router.get('/', function(req, res) {
   })
     .then(questions => {
       if(getTagFilters(req)) {
-        questions = filterQuestionsByTags(questions);
+        questions = filterQuestionsByTags(getTagFilters(req), questions);
       }
       res.status(200).json(questions);
     })

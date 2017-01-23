@@ -15,10 +15,7 @@ module.exports = function (sequelize, DataTypes) {
 			}
 		},
 		text: {
-			type: DataTypes.TEXT,
-			validate: {
-				notEmpty: true
-			}
+			type: DataTypes.TEXT
 		},
 		positiveVotes: {
 			type: DataTypes.INTEGER,
