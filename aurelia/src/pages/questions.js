@@ -5,7 +5,7 @@ import { inject, computedFrom } from 'aurelia-framework';
 export class Questions {
   constructor(auth) {
     this.auth = auth;
-    this.sideForm = null;
+    this.sideForm = 'filter';
   }
 
   showFilter() {

@@ -18,12 +18,18 @@ export class Question {
     this.auth = auth;
     this.dialogService = dialogService;
     this.ea = ea;
+    this.userEmail = "(unknownUser)";
   }
 
   attached() {
     this.httpClient.fetch(`pins/question/${this.content._id}`)
       .then(response => response.json())
       .then(pinned => { this.pinned = pinned; } )
+      .catch(reson => console.log(reason));
+
+    this.httpClient.fetch(`users/${this.content.createdByUserId}`)
+      .then(response => response.json())
+      .then(user => { this.userEmail = user.email; } )
       .catch(reson => console.log(reason));
   }
 
@@ -54,6 +60,7 @@ export class Question {
           console.log(response);
           this.httpClient.fetch(`questions/${this.content._id}`, { method: 'delete' })
             .then(() => {
+              this.ea.publish('questionDeleted', { id: this.content._id  });
               this.toastr.success('You have successfully deleted your question');
               this.deleted = true;
             });

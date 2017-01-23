@@ -44,7 +44,7 @@
             </div>
             <div class="col-lg-4 col-md-4 col-sm-6 col-xs-12 question-user">
                 <div class="col-xs-12">${content.createdAt | dateFormat}</div>  
-                <div class="col-xs-12"><i class="fa fa-user-circle-o" aria-hidden="true"></i><i>someuser@mail.com</i></div>
+                <div class="col-xs-12"><i class="fa fa-user-circle-o" aria-hidden="true"></i><i>${userEmail}</i></div>
             </div>
             <div id="quick-answer-${content._id}" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 collapse">
                 <form class="form-horizontal" role="form" submit.delegate="quickAnswer()">
