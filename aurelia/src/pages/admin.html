@@ -1,4 +1,34 @@
 <template>
+  <div class="col-md-6">
+    <h4>Domains: </h4>
+    <form role="form" submit.delegate="addDomain()">
+    <div class="form-group">
+      <label for="domain">Domain:</label>
+      <input class="form-control" name="domain" type="text" name="domain" value.bind="domain" placeholder="Enter new domain">
+      <br>
+      <button class="btn btn-primary" type="submit"> Add domain</button>
+    </div>
+    </form>
+    <div>
+      <div class="well" repeat.for="dom of domains">
+        <span>${dom.text}</span>
+        <button if.bind="isAdmin" class="pull-right btn btn-danger btn-xs" click.trigger="deleteDomain(dom)">
+          <i class="fa fa-trash" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+  </div>
 
-  TODO: admin page
+  <div class="col-md-6">
+    <h4>Users: </h4>
+    <div  repeat.for="user of users">
+      <div class="well">
+        <span>${ user.email } </span>
+        <button class="pull-right btn btn-danger btn-xs" if.bind="isAdmin" click.trigger="deleteUser(user)">
+          <i class="fa fa-trash" aria-hidden="true"></i>
+        </button>
+    </div>
+    </div>
+    </div>
+  </div>
 </template>

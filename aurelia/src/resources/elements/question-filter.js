@@ -10,7 +10,7 @@ export class QuestionFilter {
     this.tags = [];
     this.httpClient.fetch('domains')
       .then(response => response.json())
-      .then(domains => { this.domains = domains; console.log("Domains:", this.domains)})
+      .then(domains => { this.domains = domains; })
       .catch(reason => { console.log(reason); });
   }
 

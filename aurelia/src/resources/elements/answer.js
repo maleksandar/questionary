@@ -21,7 +21,6 @@ export class Answer {
     this.dialogService.open({ viewModel: ConfirmationDialog, model: { headline: "Delete answer", message: "Are you sure you want to delete this answer?"} })
       .then(response => {
         if(!response.wasCancelled) {
-          console.log(response);
           this.httpClient.fetch(`answers/${this.content._id}`, { method: 'delete' })
             .then(() => {
               this.toastr.success('You have successfully deleted your answer');

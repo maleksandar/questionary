@@ -15,39 +15,49 @@ export class QuestionList {
   }
 
   attached() {
-    this.subscriber = this.ea.subscribe('questionsFiltered', message => {
+    this.filterSubscriber = this.ea.subscribe('questionsFiltered', message => {
       this.filter = message;
-      let request = this.getRequestBase();
+      this.setRequestBase();
+
       if(message.domain) {
-        request += `&domainFilter=${message.domain}`
+        this.request += `&domainFilter=${message.domain}`
       }
       if(message.questionText) {
-        request += `&questiontextFilter=${message.questionText}`
+        this.request += `&questiontextFilter=${message.questionText}`
       }
       if(message.tags.length) {
-        message.tags.forEach(tag => {request+= `&tagFilter=${tag}`});
+        message.tags.forEach(tag => {this.request+= `&tagFilter=${tag}`});
       }
-      this.getQuestions(request);
+      this.getQuestions();
     });
 
-    this.getQuestions(this.getRequestBase());
+    this.questionAddedSubscriber = this.ea.subscribe('questionAdded', message => {
+      this.getQuestions();
+    });
+
+    this.questionDeletedSubscriber = this.ea.subscribe('questionDeleted', mesage => {
+      this.getQuestions();
+    });
+
+    this.setRequestBase();
+    this.getQuestions();
   }
 
-  getRequestBase() {
-    let request = '';
+  setRequestBase() {
+    this.request = '';
     if(this.source === 'pinned') {
-      request = 'questions/pinned?';
+      this.request = 'questions/pinned?';
     } else if(this.source === 'mine') {
-      request = 'questions/mine?';
+      this.request = 'questions/mine?';
     } else {
-      request = 'questions?include=Answers&include=Tags'
+      this.request = 'questions?include=Answers&include=Tags'
     }
 
-    return request;
+    return this.request;
   }
 
-  getQuestions(request) {
-    this.httpClient.fetch(request)
+  getQuestions() {
+    this.httpClient.fetch(this.request)
       .then(response => response.json())
       .then(questions => {
         this.questions = questions;
@@ -64,15 +74,10 @@ export class QuestionList {
   }
 
   detached() {
-    this.subscriber.dispose();
+    this.filterSubscriber.dispose();
+    this.questionAddedSubscriber.dispose();
+    this.questionDeletedSubscriber.dispose();
+
   }
-
-  // valueChanged(newValue, oldValue) {
-  //   this.questions = this.qss[newValue];
-  // }
-
-  // setPage(index) {
-  //   this.currentIndex = index;
-  // }
 }
 

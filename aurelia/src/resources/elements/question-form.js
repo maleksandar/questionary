@@ -1,13 +1,15 @@
 import { HttpClient, json } from 'aurelia-fetch-client';
 import { inject } from 'aurelia-framework';
+import { EventAggregator } from 'aurelia-event-aggregator';
 var toastr = require('toastr');
 
 
-@inject(HttpClient, toastr)
+@inject(HttpClient, toastr, EventAggregator)
 export class QuestionForm {
-  constructor(httpClient, toastr) {
+  constructor(httpClient, toastr, ea) {
     this.httpClient = httpClient;
     this.toastr = toastr;
+    this.ea = ea;
     this.tags = [];
     this.tag = "";
     this.httpClient.fetch('domains')
@@ -27,6 +29,8 @@ export class QuestionForm {
       this.headline = "";
       this.text = "";
       this.tags = [];
+      this.tag = "";
+      this.ea.publish('questionAdded');
     })
     .catch(() => this.serverError = true);
   }

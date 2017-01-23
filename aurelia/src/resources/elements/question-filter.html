@@ -5,14 +5,14 @@
       <h4>Filter Questions:</h4>
       <div class="form-group">
         <label for="questionText"> Text:</label>
-        <input type="text" name="questionText" value.bind="questionText" class="form-control">
+        <input type="text" placeholder="Enter part of the headline or description of a question" name="questionText" value.bind="questionText" class="form-control">
       </div>
       <div class="form-group">
         <div>
           &nbsp;<span repeat.for="tag of tags"> <span class="tag tag-pill"> ${tag} <i click.trigger="removeTag(tag)" class="fa fa-times" aria-hidden="true"></i></span>          </span>
         </div>
         <div class="input-group col-md-6">
-          <input type="text" class="form-control" name="tag" placeholder="Add tag:" value.bind="tag">
+          <input type="text" class="form-control" maxlength=15 name="tag" placeholder="Add a tag:" value.bind="tag">
           <div class="input-group-btn">
             <button class="btn btn-primary" click.trigger="addTag()"> 
                   <i class="fa fa-plus" aria-hidden="true"></i>
@@ -29,13 +29,14 @@
 </select>
 </div>
 </div>
-<div class="form-group">
+<!--TODO Add filtering by dates -->
+<!--<div class="form-group">
 <label for="dateFrom">Date From:</label>
 <input type="date" name="dateFrom" value.bind="dateFrom" class="form-control">
 
 <label for="dateTo">Date To:</label>
 <input type="date" name="dateTo" value.bind="dateTo" class="form-control">
-</div>
+</div>-->
 <div class="form-group">
 <button type="submit" class="col-md-12 btn btn-primary"> 
           <span> 
