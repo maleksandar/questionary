@@ -18,9 +18,10 @@ export class EditDialog {
 
     activate(content) {
         this.headline = content.headline;
-        this.retObj.question = content.question;
-        this.retObj.tags = content.question.TagQuestions.map(tag => {return tag.TagText; });
-        this.retObj.domain = content.question.DomainText;
+        this.retObj.headline = content.questionHeadline;
+        this.retObj.text = content.questionText;
+        this.retObj.tags = content.questionTags;
+        this.retObj.domain = content.questionDomain;
     }
 
     removeTag(tagText) {

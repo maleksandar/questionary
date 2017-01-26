@@ -4,15 +4,14 @@
       <h4 class="modal-title"> ${headline} </h4>
     </ai-dialog-header>
       <ai-dialog-body>
-      </ai-dialog-body>
         <div class="questionForm" role="form">
             <div class="form-group">
-                <label for="retObj.question.headline">Headline:</label>
-                <input value.bind="retObj.question.headline" required type="text" class="form-control" name="headline" placeholder="Enter the headline of your question">
+                <label for="retObj.headline">Headline:</label>
+                <input value.bind="retObj.headline" required type="text" class="form-control" name="headline" placeholder="Enter the headline of your question">
             </div>
             <div class="form-group">
-                <label for="retObj.question.text">Text:</label>
-                <textarea value.bind="retObj.question.text" class="form-control" rows="7" name="text" placeholder="Enter the text of your question"></textarea>
+                <label for="retObj.text">Text:</label>
+                <textarea value.bind="retObj.text" class="form-control" rows="7" name="text" placeholder="Enter the text of your question"></textarea>
             </div>
          <div class="form-group">
             <div>
@@ -38,6 +37,7 @@
          </div>
 
         </div>
+      </ai-dialog-body>
       <ai-dialog-footer>
          <button click.trigger = "dialogController.cancel()">Cancel</button>
          <button click.trigger = "dialogController.ok(retObj)">Ok</button>

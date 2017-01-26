@@ -45,10 +45,33 @@ export class Question {
 
   edit() {
     this.dialogService.open({ viewModel: EditDialog, model: {
-      headline: "Edit question", question: this.content
-    }}).then(response => {
-      if(!response.wasCancelled) {
-          //Saljemo zahtev na server
+      headline: "Edit question", 
+      questionHeadline: this.content.headline,
+      questionText: this.content.text,
+      questionTags: this.content.TagQuestions.map(tag => { return tag.TagText; }),
+      questionDomain: this.content.DomainText
+    }}).then(dialogResponse => {
+      if(!dialogResponse.wasCancelled) {
+        console.log(dialogResponse.output);
+        this.httpClient.fetch(`questions/${this.content._id}`, { 
+            method: 'put',
+            body: json({
+              headline: dialogResponse.output.headline,
+              text: dialogResponse.output.text,
+              domain: dialogResponse.output.domain,
+              tags: dialogResponse.output.tags
+            })
+          })
+          .then((response) => response.json())
+          .then((resObj) => {
+            if(resObj.updated) {
+              this.toastr.success('You have successfully edited your question');
+              this.content.headline = dialogResponse.output.headline;
+              this.content.text = dialogResponse.output.text;
+              this.content.TagQuestions = dialogResponse.output.tags.map(tag => { return { TagText: tag };});
+              this.content.DomainText = dialogResponse.output.domain;
+            }
+          });
       }
     });
   }

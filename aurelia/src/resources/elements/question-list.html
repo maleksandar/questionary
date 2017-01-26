@@ -2,16 +2,43 @@
   <require from="./question"></require>
   <div if.bind="questions.length !== 0" value.bind="currentIndex">
     <div>
-      <div if.bind="qssIsNotEmpty" repeat.for="question of qss[currentIndex]">
+      <div value.bind="currentIndex" if.bind="questionsIsNotEmpty" repeat.for="question of questions">
         <question content.bind="question"></question>
       </div>
       <div>
-        <div if.bind="qssIsNotEmpty" class="col-lg-12 col-md-12 col-sm-12 col-xs-12" style="text-align: center;">
-          <ul class="pagination pagination" repeat.for="index of pageIndexes">
+        <div if.bind="questionsIsNotEmpty" class="col-lg-12 col-md-12 col-sm-12 col-xs-12" style="text-align: center;">
+          <!-- pageIndexes.length <= 5 -->
+          <div if.bind="paginationLower">
+            <ul class="pagination pagination" repeat.for="index of pageIndexes">
+              <li class="${currentIndex == index? 'active':''}">
+                <a click.delegate="setPage(index)" href="#">${index+1}</a>
+              </li>
+            </ul>
+          </div>
+
+         <!-- pageIndexes.length > 5 -->
+         <div if.bind="paginationGreater">
+           <!-- First page -->
+           <ul class="pagination pagination">
+            <li class="${currentIndex == 0? 'active':''}">
+              <a click.delegate="setPage(0)" href="#">1</a>
+            </li>
+           </ul>
+           
+           <!-- Middle pages -->
+           <ul class="pagination pagination" repeat.for="index of getPages(currentIndex)">
             <li class="${currentIndex == index? 'active':''}">
               <a click.delegate="setPage(index)" href="#">${index+1}</a>
+            </li> 
+           </ul>
+           
+           <!-- Last page -->
+           <ul class="pagination pagination">
+            <li class="${currentIndex == (pageIndexes.length-1)? 'active':''}">
+              <a click.delegate="setPage(pageIndexes.length-1)" href="#">${pageIndexes.length}</a>
             </li>
-          </ul>
+           </ul>
+         </div>
         </div>
       </div>
     </div>

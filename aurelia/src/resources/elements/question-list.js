@@ -5,13 +5,16 @@ import { EventAggregator } from 'aurelia-event-aggregator';
 @inject(HttpClient, EventAggregator)
 export class QuestionList {
   @bindable source;
+  @bindable value;
 
   constructor(httpClient, ea) {
     this.httpClient = httpClient;
     this.ea = ea;
-    this.qss = [];
     this.pageIndexes = [];
-    this.qssIsNotEmpty = false;
+    this.questions = [];
+    this.questionsIsNotEmpty = false;
+    this.paginationLower = false;
+    this.paginationGreater = false;
   }
 
   attached() {
@@ -48,7 +51,7 @@ export class QuestionList {
     if(this.source === 'pinned') {
       this.request = 'questions/pinned?';
     } else if(this.source === 'mine') {
-      this.request = 'questions/mine?';
+      this.request = 'questions/mine?limit=3';
     } else {
       this.request = 'questions?include=Answers&include=Tags'
     }
@@ -57,27 +60,68 @@ export class QuestionList {
   }
 
   getQuestions() {
-    this.httpClient.fetch(this.request)
+    this.httpClient.fetch(this.request )
       .then(response => response.json())
-      .then(questions => {
-        this.questions = questions;
-        this.qss = [];
-        while(this.questions.length != 0)
-          this.qss.push(this.questions.splice(0,6));
-        this.qssIsNotEmpty = this.qss.length != 0;
-        if(this.qssIsNotEmpty) {
-          this.questions = this.qss[0];
+      .then(responseObj => {
+        if(responseObj.count != 0) {
+          this.setParams(responseObj);
           this.currentIndex = 0;
-          this.pageIndexes = Array.from(new Array(this.qss.length), (x,i) => i);
+        } else {
+          this.questions = [];
+          this.questionsIsNotEmpty = false;
+          this.paginationGreater = false;
+          this.paginationLower = false;
+          this.currentIndex = 0;
         }
     });
+  }
+
+  valueChanged(newValue, oldValue) {
+  } 
+
+  setPage(index) {
+    this.httpClient.fetch(this.request + `&offset=${index*3}`)
+      .then(response => response.json())
+      .then(responseObj => {
+        this.setParams(responseObj);
+      });
+      this.currentIndex = index;
+  }
+
+  getPages(index) {
+    if(index <= 1)
+      return this.pageIndexes.slice(1, 4);
+    else if(index > 1 && (index <= (this.pageIndexes.length - 3)))
+      return this.pageIndexes.slice(index-1, index+2);
+    else if(index > 1 && (index > (this.pageIndexes.length - 3)))
+      return this.pageIndexes.slice(this.pageIndexes.length-4, this.pageIndexes.length-1);
+  }
+
+  setParams(responseObj) {
+    if(responseObj.count != 0) {
+      console.log(responseObj);
+      this.questions = responseObj.rows;
+      this.questionsIsNotEmpty = true;
+      var count = responseObj.count;
+      if(count % 3 == 0)
+        this.pageIndexes = Array.from(new Array(Math.floor(count / 3)), (x,i) => i);
+      else
+        this.pageIndexes = Array.from(new Array(Math.floor(count / 3) + 1), (x,i) => i);
+      this.paginationLower = this.questionsIsNotEmpty && (this.pageIndexes.length <= 5);
+      this.paginationGreater = this.questionsIsNotEmpty && (this.pageIndexes.length > 5); 
+    } else  {
+      this.paginationGreater = false;
+      this.paginationLower = false;
+      this.questionsIsNotEmpty = false;
+      this.questions = [];
+      this.currentIndex = 0;
+    }
   }
 
   detached() {
     this.filterSubscriber.dispose();
     this.questionAddedSubscriber.dispose();
     this.questionDeletedSubscriber.dispose();
-
   }
 }
 
