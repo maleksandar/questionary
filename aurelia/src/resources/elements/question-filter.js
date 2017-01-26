@@ -15,6 +15,7 @@ export class QuestionFilter {
   }
 
   filter() {
+    console.log(this.tags);
     this.ea.publish('questionsFiltered', { 
       questionText: this.questionText,
       tags: this.tags,

@@ -29,10 +29,10 @@ function handleError(res, statusCode) {
 }
 
 router.get('/user/:id', (req, res) => {
-   return Question.findAll({
+   return Question.findAndCountAll({
     include: getAdditionalInfoFilters(req.query.include),
     where: { createdByUserId: req.params.id },
-    limit: parseInt(req.query.limit) || 5,
+    limit: parseInt(req.query.limit) || 3,
     offset: parseInt(req.query.offset) || 0,
     order: 'createdAt DESC'
   })
@@ -45,15 +45,19 @@ router.get('/user/:id', (req, res) => {
 router.get('/mine', auth.isAuthenticated(), (req, res) => {
    return Question.findAll({
     include: [ Answer, TagQuestion ],
-    where: _.merge({ createdByUserId: req.user._id }, getGeneralFilters(req)),
-    limit: parseInt(req.query.limit) || 5,
-    offset: parseInt(req.query.offset) || 0,
+    where: _.merge({ createdByUserId: `${req.user._id}` }, getGeneralFilters(req)),
     order: 'createdAt DESC'
   }).then(questions => {
+        var limit = parseInt(req.query.limit) || 3,
+            offset = parseInt(req.query.offset) || 0;
         if(getTagFilters(req)) {
-          questions = filterQuestionsByTags(getTagFilters(req), questions);
+          questions= filterQuestionsByTags(getTagFilters(req), questions);
         }
-        res.status(200).json(questions);
+
+        res.status(200).json( {
+          count: questions.length,
+          rows: questions.splice(offset, limit)
+        });
     })
     .catch(handleError(res));
 });
@@ -66,14 +70,19 @@ router.get('/pinned', auth.isAuthenticated(), (req, res) => {
       Question.findAll({
         include: [ Answer, TagQuestion ],
         where: _.merge({ _id:  { $in: questionsPinned } }, getGeneralFilters(req)),
-        limit: parseInt(req.query.limit) || 5,
-        offset: parseInt(req.query.offset) || 0,
         order: 'createdAt DESC'
      }).then(questions => {
+        var limit = parseInt(req.query.limit) || 3,
+            offset = parseInt(req.query.offset) || 0;
+
         if(getTagFilters(req)) {
-          questions = filterQuestionsByTags(getTagFilters(req), questions);
+          questions= filterQuestionsByTags(getTagFilters(req), questions);
         }
-        res.status(200).json(questions);
+
+        res.status(200).json({ 
+          count: questions.length, 
+          rows: questions.splice(offset, limit)
+        });
     })
     .catch(handleError(res));
     });
@@ -124,14 +133,19 @@ router.get('/', function(req, res) {
   return Question.findAll({
     include: getAdditionalInfoFilters(req.query.include),
     where: filter,
-    limit: parseInt(req.query.limit) || 5,
-    offset: parseInt(req.query.offset) || 0
   })
     .then(questions => {
+      var limit = parseInt(req.query.limit) || 3,
+          offset = parseInt(req.query.offset) || 0;
+
       if(getTagFilters(req)) {
         questions = filterQuestionsByTags(getTagFilters(req), questions);
       }
-      res.status(200).json(questions);
+
+      res.status(200).json({
+        count: questions.length,
+        rows: questions.splice(offset, limit)
+      });
     })
     .catch(handleError(res));
 });
@@ -190,16 +204,24 @@ router.put('/:id', auth.isAuthenticated(), function(req, res) {
       createdByUserId: req.user._id
     }
   }).then(question => {
-    console.log(req.body.headline);
-    console.log(req.body.text);
-    console.log(req.body.domain.text);
-    console.log(req.body.tags);
     if(question) {
       question.headline = req.body.headline;
       question.text = req.body.text;
-      var tagQuestions = [];
-      req.body.tags.forEach((tag) => tagQuestions.push(tag));
-      //question.setTagQuestions(tagQuestions);
+      TagQuestion.destroy( {
+        where: {
+          QuestionId: question._id
+        }
+      }).catch(console.log("Tags not deleted"));
+      var Tags = [];
+      req.body.tags.forEach(tag => Tags.push({ text: tag }));
+      Tag.bulkCreate(Tags, { ignoreDuplicates: true })
+        .then(tags => {
+          console.log(tags);
+          var tagQuestion = [];
+          tags.forEach(tag => tagQuestion.push({ QuestionId: question._id, TagText: tag.text }));
+          TagQuestion.bulkCreate(tagQuestion, { ignoreDuplicates: true })
+            .then(console.log("Created new tagQuestions"));
+        });
       question.DomainText = req.body.domain.text;
       question.save()
         .then(question => {
